@@ -1,12 +1,19 @@
 package com.jeremy.thunder
 
+import com.jeremy.thunder.event.WebSocketEvent
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+
 class SocketHandler : WebSocket {
 
     private var socket: okhttp3.WebSocket? = null
 
     override fun open(webSocket: okhttp3.WebSocket) {
-        // socket already open
         socket = webSocket
+    }
+
+    override fun events(): Flow<WebSocketEvent> {
+        return emptyFlow()
     }
 
     override fun send(data: String) {

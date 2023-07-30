@@ -1,5 +1,7 @@
 package com.jeremy.thunder
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -10,6 +12,7 @@ fun OkHttpClient.makeWebSocketCore(url: String): WebSocket.Factory {
         listener = socketListener
     )
     return OkHttpWebSocket.Factory(
-        socketListener = socketListener
+        socketListener = socketListener,
+        scope = CoroutineScope(SupervisorJob())
     )
 }

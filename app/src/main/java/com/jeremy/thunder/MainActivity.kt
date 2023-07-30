@@ -1,26 +1,29 @@
 package com.jeremy.thunder
 
-import android.app.Application
-import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.jeremy.thunder.socket.SocketService
-import com.jeremy.thunder.socket.Ticket
-import com.jeremy.thunder.socket.Type
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import com.jeremy.thunder.ui.theme.ThunderTheme
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.logging.HttpLoggingInterceptor
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,35 +34,24 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    //1. OkHttpClient 생성
-                    val okHttpClient = OkHttpClient.Builder().addInterceptor(
-                        HttpLoggingInterceptor().setLevel(
-                            HttpLoggingInterceptor.Level.BODY
-                        )
-                    ).build()
-
-                    //2. Thunder를 사용하여 Service 생성
-                    val context = App.context()
-                    val service = Thunder.Builder()
-                        .webSocketCore(okHttpClient.makeWebSocketCore("wss://api.upbit.com/websocket/v1"))
-                        .setApplicationContext(context)
-                        .build()
-                        .create<SocketService>()
-
-                    //3. 데이터 요청
-                    val requestList = listOf(
-                        Ticket(),
-                        Type(
-                            type = "ticker"
-                        ),
-                        Type(
-                            type = "trade"
-                        ),
-                    )
+                    LaunchedEffect(key1 = Unit) {
+                        viewModel.request()
+                    }
 
                     LaunchedEffect(key1 = Unit) {
-                        delay(2000)
-                        service.request(request = requestList)
+                        viewModel.observeResponse()
+                    }
+
+                    val state = viewModel.response.collectAsState()
+
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = state.value?.p.orEmpty(),
+                            modifier = Modifier.fillMaxWidth(),
+                            fontSize = TextUnit.Unspecified,
+                            fontStyle = FontStyle.Normal,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

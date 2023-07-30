@@ -1,19 +1,23 @@
 package com.jeremy.thunder
 
 import android.content.Context
-import android.util.Log
-import com.google.gson.Gson
+import com.jeremy.thunder.CoroutineScope.scope
+import com.jeremy.thunder.event.EventProcessor
+import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.event.WebSocketEventProcessor
 import com.jeremy.thunder.network.NetworkConnectivityService
 import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
+import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
-import kotlin.contracts.contract
 
 class Thunder private constructor(
     private val webSocketCore: WebSocket.Factory,
-    private val thunderConnection: ThunderConnection
+    private val thunderProvider: ThunderProvider,
+    private val serviceExecutor: ServiceExecutor,
+    private val scope: CoroutineScope
 ) {
 
     inline fun <reified T : Any> create(): T = create(T::class.java)
@@ -33,46 +37,58 @@ class Thunder private constructor(
         method.annotations.getOrNull(0)?.let { annotation ->
             val args = nullableArgs ?: arrayOf()
             return@InvocationHandler when (annotation) {
-                is Send -> {
-                    val request = Gson().toJson(args[0])
-                    thunderConnection.socket.send(request)
-                }
-
-                is Receive -> {
-
-                }
-
-                else -> this
+                is Send -> serviceExecutor.executeSend(method, args)
+                is Receive -> serviceExecutor.executeReceive(method, args)
+                else -> require(false) { "there is no matching annotation" }
             }
         }
     }
 
-    class Builder() {
+    class Builder {
         private var webSocketCore: WebSocket.Factory? = null
-        private var thunderConnection: ThunderConnection? = null
+        private var thunderStateManager: ThunderStateManager? = null
         private var context: Context? = null
 
         fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
         fun setApplicationContext(context: Context): Builder = apply { this.context = context }
 
-        private fun createThunderConnection(): ThunderConnection {
-            thunderConnection = ThunderConnection.Factory(
+        private fun createThunderStateManager(): ThunderStateManager {
+            thunderStateManager = ThunderStateManager.Factory(
                 createNetworkConnectivity(),
                 checkNotNull(webSocketCore)
             ).create()
-            return checkNotNull(thunderConnection)
+            return checkNotNull(thunderStateManager)
         }
 
         private fun createNetworkConnectivity(): NetworkConnectivityService {
+            require(context != null) { "Application Context should be set before request build()" }
             return NetworkConnectivityServiceImpl(checkNotNull(context))
         }
 
+        private fun createEventProcessor(): EventProcessor<WebSocketEvent> {
+            return WebSocketEventProcessor()
+        }
+
+        private fun createThunderProvider(): ThunderProvider {
+            require(thunderStateManager != null) { "ThunderStateManager should not be null" }
+            return ThunderProvider.Factory(
+                thunderStateManager = checkNotNull(thunderStateManager),
+                eventProcessor = createEventProcessor()
+            ).create()
+        }
+
+        private fun createServiceExecutor(): ServiceExecutor {
+            return ServiceExecutor.Factory(createThunderProvider(), scope).create()
+        }
+
         fun build(): Thunder {
-            createThunderConnection()
+            createThunderStateManager()
             return Thunder(
                 webSocketCore = checkNotNull(webSocketCore),
-                thunderConnection = checkNotNull(thunderConnection)
+                thunderProvider = createThunderProvider(),
+                serviceExecutor = createServiceExecutor(),
+                scope = scope
             )
         }
     }
