@@ -1,7 +1,10 @@
+# 🚧🚧🚧🚧 Work In Progress 🚧🚧🚧🚧
+
 # Thunder
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
-Currently, support only for Coroutine Flow. 
+The overall design of this library is very similar to Scarlet.     
+Currently, support only for Coroutine Flow.     
 
 ---
 ## Download First
@@ -27,6 +30,13 @@ dependencies {
     implementation 'com.github.jaeyunn15:Thunder:0.0.2'
 }
 ~~~
+
+---
+## Restriction 🚨
+We need to target **Java 17** because the library is aligned with **Java 17**.      
+In the future, we will respond by lowering the Java version.
+
+
 
 ---
 ## Usage
