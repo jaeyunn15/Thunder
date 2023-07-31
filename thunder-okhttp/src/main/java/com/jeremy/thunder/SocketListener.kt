@@ -1,6 +1,5 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.event.WebSocketEvent
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -12,34 +11,34 @@ import okio.ByteString
 
 class SocketListener : WebSocketListener(), EventCollector {
 
-    private val _eventFlow = MutableSharedFlow<WebSocketEvent>(
+    private val _eventFlow = MutableSharedFlow<com.jeremy.thunder.event.WebSocketEvent>(
         replay = 1,
         extraBufferCapacity = DEFAULT_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
 
-    override fun collectEvent(): Flow<WebSocketEvent> {
+    override fun collectEvent(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
         return _eventFlow.asSharedFlow()
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
-        _eventFlow.tryEmit(WebSocketEvent.OnConnectionOpen(webSocket))
+        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionOpen(webSocket))
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        _eventFlow.tryEmit(WebSocketEvent.OnMessageReceived(bytes.toString()))
+        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnMessageReceived(bytes.toString()))
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        _eventFlow.tryEmit(WebSocketEvent.OnMessageReceived(text))
+        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnMessageReceived(text))
     }
 
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-        _eventFlow.tryEmit(WebSocketEvent.OnConnectionClosed)
+        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionClosed)
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        _eventFlow.tryEmit(WebSocketEvent.OnConnectionError(t.message))
+        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionError(t.message))
     }
 
     companion object {
