@@ -10,4 +10,7 @@ interface SocketService {
 
     @Receive
     fun observeTicker(): Flow<TickerResponse>
+
+    @Receive
+    fun observeAllMarkets(): Flow<AllMarketResponse>
 }

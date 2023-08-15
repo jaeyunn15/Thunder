@@ -39,7 +39,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     LaunchedEffect(key1 = Unit) {
-                        viewModel.observeResponse()
+                        viewModel.observeAllMarket()
+                    }
+
+                    LaunchedEffect(key1 = Unit) {
+                        viewModel.observeTicker()
                     }
 
                     val state = viewModel.response.collectAsState()

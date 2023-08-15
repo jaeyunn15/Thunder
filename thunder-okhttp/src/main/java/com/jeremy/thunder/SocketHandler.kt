@@ -7,8 +7,12 @@ class SocketHandler : WebSocket {
 
     private var socket: okhttp3.WebSocket? = null
 
-    override fun open(webSocket: okhttp3.WebSocket) {
-        socket = webSocket
+    fun initWebSocket(socket: okhttp3.WebSocket) {
+        this.socket = socket
+    }
+
+    override fun open() {
+
     }
 
     override fun events(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
@@ -21,10 +25,12 @@ class SocketHandler : WebSocket {
 
     override fun close(code: Int, reason: String) {
         socket?.close(code, reason)
+        socket = null
     }
 
     override fun cancel() {
         socket?.cancel()
+        socket = null
     }
 
     override fun error(t: String) {

@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.CoroutineScope.scope
 import com.jeremy.thunder.event.EventProcessor
@@ -24,13 +24,8 @@ class ThunderProvider internal constructor(
         return eventProcessor.collectEvent()
     }
 
-    fun send(message: String) {
-        thunderStateManager.socket.send(message)
-//        state에 따른 요청 재정의 필요
-//        val state = thunderStateManager.thunderState()
-//        if (state is ThunderState.CONNECTED) {
-//            thunderStateManager.socket.send(message)
-//        }
+    fun send(key: String, message: String) {
+        thunderStateManager.send(key, message)
     }
 
     class Factory(

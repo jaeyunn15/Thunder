@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface WebSocket {
 
     //websocket 오픈 시
-    fun open(webSocket: okhttp3.WebSocket)
+    fun open()
 
     fun events(): Flow<WebSocketEvent>
 

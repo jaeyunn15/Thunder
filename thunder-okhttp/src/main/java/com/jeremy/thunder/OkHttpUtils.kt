@@ -6,13 +6,22 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 fun OkHttpClient.makeWebSocketCore(url: String): WebSocket.Factory {
-    val socketListener = SocketListener()
-    newWebSocket(
-        request = Request.Builder().url(url).build(),
-        listener = socketListener
-    )
     return OkHttpWebSocket.Factory(
-        socketListener = socketListener,
+        provider = ConnectionProvider(this, url),
         scope = CoroutineScope(SupervisorJob())
     )
+}
+
+interface SocketListenerProvider {
+    fun provide(socketListener: SocketListener)
+}
+
+class ConnectionProvider(
+    private val okHttpClient: OkHttpClient,
+    private val url: String
+) : SocketListenerProvider {
+
+    override fun provide(socketListener: SocketListener) {
+        okHttpClient.newWebSocket(Request.Builder().url(url).build(), socketListener)
+    }
 }

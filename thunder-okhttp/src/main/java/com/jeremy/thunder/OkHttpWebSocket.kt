@@ -8,29 +8,29 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 
 
 class OkHttpWebSocket internal constructor(
+    private val provider: ConnectionProvider,
     private val socketListener: SocketListener,
     private val socketHandler: SocketHandler,
     private val scope: CoroutineScope
 ) : WebSocket {
 
     private val _event = MutableStateFlow<com.jeremy.thunder.event.WebSocketEvent?>(null)
-
-    init {
-        socketListener.collectEvent().onEach {
+    override fun open() {
+        socketListener.collectEvent().onStart {
+            provider.provide(socketListener)
+        }.onEach {
+            _event.tryEmit(it)
             when (it) {
-                is com.jeremy.thunder.event.WebSocketEvent.OnConnectionOpen -> {
-                    socketHandler.open(it.webSocket as okhttp3.WebSocket)
+                is WebSocketEvent.OnConnectionOpen -> {
+                    socketHandler.initWebSocket(it.webSocket as okhttp3.WebSocket)
                 }
-                else -> _event.tryEmit(it)
+                else -> Unit
             }
         }.launchIn(scope)
-    }
-
-    override fun open(webSocket: okhttp3.WebSocket) {
-        // ?
     }
 
     override fun events(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
@@ -54,12 +54,13 @@ class OkHttpWebSocket internal constructor(
     }
 
     class Factory(
-        private val socketListener: SocketListener,
+        private val provider: ConnectionProvider,
         private val scope: CoroutineScope
     ) : WebSocket.Factory {
         override fun create(): WebSocket =
             OkHttpWebSocket(
-                socketListener = socketListener,
+                provider = provider ,
+                socketListener = SocketListener(),
                 socketHandler = SocketHandler(),
                 scope = scope
             )
