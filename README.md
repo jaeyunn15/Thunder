@@ -25,7 +25,8 @@ Use the library by adding a Dependency to the module you want to use.
 
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.4
+    implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.3
+    // if you want to use ValveCache, RecoveryCache, you can use 0.0.4-pre version
 }
 ~~~
 
