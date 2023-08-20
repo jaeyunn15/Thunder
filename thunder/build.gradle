@@ -53,9 +53,8 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':thunder-state')
     implementation project(path: ':thunder-cache')
-    api project(path: ':thunder-okhttp')
+    implementation project(path: ':thunder-okhttp')
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
