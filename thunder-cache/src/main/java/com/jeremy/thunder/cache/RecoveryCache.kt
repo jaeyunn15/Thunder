@@ -4,14 +4,19 @@ import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A controller that handles caching for requests from interfaces with the @Send annotation.
+ * 가장 마지막 요청을 캐싱하기 위한 목적의 캐시
  * */
 
-class CacheController {
+class RecoveryCache {
 
     private val requestCache: ConcurrentHashMap<String, String> = ConcurrentHashMap()
 
     fun set(key: String, value: String) {
         requestCache[key] = value
+    }
+
+    fun set(value: String) {
+        requestCache[value] =value
     }
 
     fun get(): List<String> {
@@ -26,8 +31,8 @@ class CacheController {
 
     class Factory {
 
-        fun create(): CacheController {
-            return CacheController()
+        fun create(): RecoveryCache {
+            return RecoveryCache()
         }
     }
 }

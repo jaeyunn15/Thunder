@@ -16,5 +16,6 @@ dependencyResolutionManagement {
 rootProject.name = "Thunder"
 include ':app'
 include ':thunder'
-include ':thunder-core'
+include ':thunder-state'
 include ':thunder-okhttp'
+include ':thunder-cache'

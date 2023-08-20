@@ -19,8 +19,8 @@ class SocketHandler : WebSocket {
         return emptyFlow()
     }
 
-    override fun send(data: String) {
-        socket?.send(data)
+    override fun send(data: String): Boolean {
+        return socket?.send(data) ?: false
     }
 
     override fun close(code: Int, reason: String) {

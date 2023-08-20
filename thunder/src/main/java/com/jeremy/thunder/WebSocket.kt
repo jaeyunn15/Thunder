@@ -11,7 +11,7 @@ interface WebSocket {
     fun events(): Flow<WebSocketEvent>
 
     //websocket 메세지 전송
-    fun send(data: String)
+    fun send(data: String): Boolean
 
     //websocket 연결 종료 - code & reason
     fun close(code: Int, reason: String)
