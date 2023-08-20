@@ -4,7 +4,6 @@ import android.content.Context
 import com.jeremy.thunder.CoroutineScope.scope
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.event.EventProcessor
-import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.WebSocketEventProcessor
 import com.jeremy.thunder.internal.ServiceExecutor
 import com.jeremy.thunder.internal.ThunderProvider
@@ -14,8 +13,6 @@ import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 

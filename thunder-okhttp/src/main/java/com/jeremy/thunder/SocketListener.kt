@@ -11,34 +11,34 @@ import okio.ByteString
 
 class SocketListener : WebSocketListener(), EventCollector {
 
-    private val _eventFlow = MutableSharedFlow<com.jeremy.thunder.event.WebSocketEvent>(
+    private val _eventFlow = MutableSharedFlow<com.jeremy.thunder.WebSocketEvent>(
         replay = 1,
         extraBufferCapacity = DEFAULT_BUFFER,
         onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
 
-    override fun collectEvent(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
+    override fun collectEvent(): Flow<com.jeremy.thunder.WebSocketEvent> {
         return _eventFlow.asSharedFlow()
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
-        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionOpen(webSocket))
+        _eventFlow.tryEmit(com.jeremy.thunder.WebSocketEvent.OnConnectionOpen(webSocket))
     }
 
     override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnMessageReceived(bytes.toString()))
+        _eventFlow.tryEmit(com.jeremy.thunder.WebSocketEvent.OnMessageReceived(bytes.toString()))
     }
 
     override fun onMessage(webSocket: WebSocket, text: String) {
-        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnMessageReceived(text))
+        _eventFlow.tryEmit(com.jeremy.thunder.WebSocketEvent.OnMessageReceived(text))
     }
 
     override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionClosed)
+        _eventFlow.tryEmit(com.jeremy.thunder.WebSocketEvent.OnConnectionClosed)
     }
 
     override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        _eventFlow.tryEmit(com.jeremy.thunder.event.WebSocketEvent.OnConnectionError(t.message))
+        _eventFlow.tryEmit(com.jeremy.thunder.WebSocketEvent.OnConnectionError(t.message))
     }
 
     companion object {

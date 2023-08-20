@@ -1,4 +1,4 @@
-package com.jeremy.thunder.event
+package com.jeremy.thunder
 
 sealed class WebSocketEvent {
     data class OnConnectionOpen(

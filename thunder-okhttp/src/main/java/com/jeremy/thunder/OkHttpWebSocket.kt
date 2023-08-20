@@ -1,6 +1,6 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,16 +16,16 @@ class OkHttpWebSocket internal constructor(
     private val socketListener: SocketListener,
     private val socketHandler: SocketHandler,
     private val scope: CoroutineScope
-) : WebSocket {
+) : com.jeremy.thunder.WebSocket {
 
-    private val _event = MutableStateFlow<com.jeremy.thunder.event.WebSocketEvent?>(null)
+    private val _event = MutableStateFlow<com.jeremy.thunder.WebSocketEvent?>(null)
     override fun open() {
         socketListener.collectEvent().onStart {
             provider.provide(socketListener)
         }.onEach {
             _event.tryEmit(it)
             when (it) {
-                is WebSocketEvent.OnConnectionOpen -> {
+                is com.jeremy.thunder.WebSocketEvent.OnConnectionOpen -> {
                     socketHandler.initWebSocket(it.webSocket as okhttp3.WebSocket)
                 }
                 else -> Unit
@@ -33,7 +33,7 @@ class OkHttpWebSocket internal constructor(
         }.launchIn(scope)
     }
 
-    override fun events(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
+    override fun events(): Flow<com.jeremy.thunder.WebSocketEvent> {
         return _event.asSharedFlow().filterNotNull()
     }
 
@@ -56,8 +56,8 @@ class OkHttpWebSocket internal constructor(
     class Factory(
         private val provider: ConnectionProvider,
         private val scope: CoroutineScope
-    ) : WebSocket.Factory {
-        override fun create(): WebSocket =
+    ) : com.jeremy.thunder.WebSocket.Factory {
+        override fun create(): com.jeremy.thunder.WebSocket =
             OkHttpWebSocket(
                 provider = provider ,
                 socketListener = SocketListener(),

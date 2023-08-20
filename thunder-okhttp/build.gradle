@@ -12,21 +12,21 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder-okhttp'
-                version = '0.0.1'
+                version = '0.0.7'
             }
 
             debug(MavenPublication) {
                 from components.debug
                 groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder-okhttp'
-                version = '0.0.1'
+                version = '0.0.7'
             }
         }
     }
 }
 
 android {
-    namespace 'com.jeremy.thunder'
+    namespace 'com.jeremy.thunder.okhttp'
     compileSdk 33
 
     defaultConfig {
@@ -53,7 +53,7 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':thunder')
+    api project(path: ':thunder-state')
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
