@@ -16,4 +16,4 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-group='com.github.jaeyunn15'
+group='com.jeremy.thunder'
