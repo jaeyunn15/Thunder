@@ -1,6 +1,4 @@
-# 🚧🚧🚧🚧 Work In Progress 🚧🚧🚧🚧
-
-# Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.3-green.svg)
+# Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.4.pre-green.svg)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 The overall design of this library is very similar to Scarlet.     
@@ -27,7 +25,7 @@ Use the library by adding a Dependency to the module you want to use.
 
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.3
+    implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.4
 }
 ~~~
 
