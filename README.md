@@ -2,7 +2,14 @@
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 The overall design of this library is very similar to Scarlet.     
-Currently, support only for Coroutine Flow.     
+Currently, support only for Coroutine Flow.    
+
+---
+## Feature
+- Websocket communication using Okhttp3
+- Ability to automatically cache requests based on **websocket state**
+- Ability to automatically cache requests based on **network conditions**
+- (TBD) WebSocket communication using the STOMP protocol
 
 ---
 ## Download First
@@ -26,7 +33,6 @@ Use the library by adding a Dependency to the module you want to use.
 ~~~ groovy
 dependencies {
     implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.3
-    // if you want to use ValveCache, RecoveryCache, you can use 0.0.4-pre version
 }
 ~~~
 
