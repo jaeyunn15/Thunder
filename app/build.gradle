@@ -6,6 +6,26 @@ plugins {
     id 'maven-publish'
 }
 
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'com.jeremy.thunder'
+                artifactId = 'thunder'
+                version = '0.0.7'
+            }
+
+            debug(MavenPublication) {
+                from components.debug
+                groupId = 'com.jeremy.thunder'
+                artifactId = 'thunder'
+                version = '0.0.7'
+            }
+        }
+    }
+}
+
 android {
     namespace 'com.jeremy.thunder'
     compileSdk 33
