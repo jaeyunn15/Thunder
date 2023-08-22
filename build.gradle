@@ -18,4 +18,4 @@ task clean(type: Delete) {
 
 group='com.github.jaeyunn15'
 
-apply from: file('gradle/projectDependencyGraph.gradle')
+//apply from: file('gradle/projectDependencyGraph.gradle')
