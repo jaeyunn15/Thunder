@@ -1,6 +1,7 @@
 package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.CoroutineScope.scope
+import com.jeremy.thunder.core.WebSocketEvent
 import com.jeremy.thunder.event.EventProcessor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow

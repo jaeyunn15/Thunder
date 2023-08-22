@@ -1,9 +1,6 @@
 package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.CoroutineScope.scope
-import com.jeremy.thunder.core.NetworkState
-import com.jeremy.thunder.core.ThunderError
-import com.jeremy.thunder.core.ThunderState
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache
@@ -34,11 +31,11 @@ class ThunderStateManager private constructor(
 ) {
     lateinit var socket: com.jeremy.thunder.core.WebSocket
 
-    private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
+    private val _socketState = MutableStateFlow<com.jeremy.thunder.core.ThunderState>(com.jeremy.thunder.core.ThunderState.IDLE)
 
     private val _events = MutableSharedFlow<com.jeremy.thunder.core.WebSocketEvent>(replay = 1)
 
-    private var _lastSocketState: ThunderState = ThunderState.IDLE
+    private var _lastSocketState: com.jeremy.thunder.core.ThunderState = com.jeremy.thunder.core.ThunderState.IDLE
 
     fun thunderStateAsFlow() = _socketState.asStateFlow()
 
@@ -53,13 +50,13 @@ class ThunderStateManager private constructor(
 
         networkState.networkStatus.onEach {
             when (it) {
-                NetworkState.Available -> {
-                    _socketState.updateThunderState(ThunderState.CONNECTING)
+                com.jeremy.thunder.core.NetworkState.Available -> {
+                    _socketState.updateThunderState(com.jeremy.thunder.core.ThunderState.CONNECTING)
                     openConnection()
                 }
 
-                NetworkState.Unavailable -> {
-                    _socketState.updateThunderState(ThunderState.ERROR(ThunderError.NetworkLoss(null)))
+                com.jeremy.thunder.core.NetworkState.Unavailable -> {
+                    _socketState.updateThunderState(com.jeremy.thunder.core.ThunderState.ERROR(com.jeremy.thunder.core.ThunderError.NetworkLoss(null)))
                     closeConnection()
                 }
             }
@@ -68,17 +65,17 @@ class ThunderStateManager private constructor(
         _events.onEach {
             when (it) {
                 is com.jeremy.thunder.core.WebSocketEvent.OnConnectionOpen -> {
-                    _socketState.updateThunderState(ThunderState.CONNECTED)
+                    _socketState.updateThunderState(com.jeremy.thunder.core.ThunderState.CONNECTED)
                 }
 
                 is com.jeremy.thunder.core.WebSocketEvent.OnMessageReceived -> Unit
 
                 com.jeremy.thunder.core.WebSocketEvent.OnConnectionClosed -> {
-                    _socketState.updateThunderState(ThunderState.DISCONNECTED)
+                    _socketState.updateThunderState(com.jeremy.thunder.core.ThunderState.DISCONNECTED)
                 }
 
                 is com.jeremy.thunder.core.WebSocketEvent.OnConnectionError -> {
-                    _socketState.updateThunderState(ThunderState.ERROR(ThunderError.SocketLoss(it.error)))
+                    _socketState.updateThunderState(com.jeremy.thunder.core.ThunderState.ERROR(com.jeremy.thunder.core.ThunderError.SocketLoss(it.error)))
                 }
             }
         }.launchIn(scope)
@@ -94,11 +91,11 @@ class ThunderStateManager private constructor(
         ) { currentState, request ->
 
             when (currentState) {
-                ThunderState.IDLE -> Unit
-                ThunderState.CONNECTING -> {
+                com.jeremy.thunder.core.ThunderState.IDLE -> Unit
+                com.jeremy.thunder.core.ThunderState.CONNECTING -> {
                 }
-                ThunderState.CONNECTED -> {
-                    if (_lastSocketState is ThunderState.ERROR && recoveryCache.hasCache()) {
+                com.jeremy.thunder.core.ThunderState.CONNECTED -> {
+                    if (_lastSocketState is com.jeremy.thunder.core.ThunderState.ERROR && recoveryCache.hasCache()) {
                         // Last State : ERROR - this is recovery for socket, network error
                         recoveryCache.get().forEach(::requestSendMessage)
                         recoveryCache.clear()
@@ -107,13 +104,13 @@ class ThunderStateManager private constructor(
                         request.forEach(::requestSendMessage)
                     }
                 }
-                ThunderState.DISCONNECTING -> {
+                com.jeremy.thunder.core.ThunderState.DISCONNECTING -> {
 
                 }
-                ThunderState.DISCONNECTED -> {
+                com.jeremy.thunder.core.ThunderState.DISCONNECTED -> {
 
                 }
-                is ThunderState.ERROR -> {
+                is com.jeremy.thunder.core.ThunderState.ERROR -> {
 
                 }
             }
@@ -146,7 +143,7 @@ class ThunderStateManager private constructor(
         valveCache.requestToValve(key to message)
     }
 
-    private fun MutableStateFlow<ThunderState>.updateThunderState(state: ThunderState) {
+    private fun MutableStateFlow<com.jeremy.thunder.core.ThunderState>.updateThunderState(state: com.jeremy.thunder.core.ThunderState) {
         _lastSocketState = getAndUpdate { state }
     }
 

@@ -1,5 +1,6 @@
 package com.jeremy.thunder
 
+import com.jeremy.thunder.core.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map

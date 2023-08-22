@@ -3,6 +3,8 @@ package com.jeremy.thunder
 import android.content.Context
 import com.jeremy.thunder.CoroutineScope.scope
 import com.jeremy.thunder.cache.CacheController
+import com.jeremy.thunder.core.WebSocket
+import com.jeremy.thunder.core.WebSocketEvent
 import com.jeremy.thunder.event.EventProcessor
 import com.jeremy.thunder.event.WebSocketEventProcessor
 import com.jeremy.thunder.internal.ServiceExecutor
