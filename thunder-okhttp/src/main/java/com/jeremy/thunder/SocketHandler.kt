@@ -3,7 +3,7 @@ package com.jeremy.thunder
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
-class SocketHandler : com.jeremy.thunder.WebSocket {
+class SocketHandler : com.jeremy.thunder.core.WebSocket {
 
     private var socket: okhttp3.WebSocket? = null
 
@@ -15,7 +15,7 @@ class SocketHandler : com.jeremy.thunder.WebSocket {
 
     }
 
-    override fun events(): Flow<com.jeremy.thunder.WebSocketEvent> {
+    override fun events(): Flow<com.jeremy.thunder.core.WebSocketEvent> {
         return emptyFlow()
     }
 

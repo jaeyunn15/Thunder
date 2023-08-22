@@ -2,7 +2,6 @@ package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.CoroutineScope.scope
 import com.jeremy.thunder.event.EventProcessor
-import com.jeremy.thunder.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
@@ -10,7 +9,7 @@ import kotlinx.coroutines.flow.onEach
 
 class ThunderProvider internal constructor(
     private val thunderStateManager: ThunderStateManager,
-    private val eventProcessor: EventProcessor<WebSocketEvent>,
+    private val eventProcessor: EventProcessor<com.jeremy.thunder.core.WebSocketEvent>,
     scope: CoroutineScope
 ) {
 
@@ -20,7 +19,7 @@ class ThunderProvider internal constructor(
         }.launchIn(scope)
     }
 
-    fun observeEvent(): Flow<WebSocketEvent> {
+    fun observeEvent(): Flow<com.jeremy.thunder.core.WebSocketEvent> {
         return eventProcessor.collectEvent()
     }
 
@@ -30,7 +29,7 @@ class ThunderProvider internal constructor(
 
     class Factory(
         private val thunderStateManager: ThunderStateManager,
-        private val eventProcessor: EventProcessor<WebSocketEvent>
+        private val eventProcessor: EventProcessor<com.jeremy.thunder.core.WebSocketEvent>
     ) {
 
         fun create(): ThunderProvider {

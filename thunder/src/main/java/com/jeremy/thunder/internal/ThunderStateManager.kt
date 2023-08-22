@@ -1,14 +1,12 @@
 package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.CoroutineScope.scope
-import com.jeremy.thunder.NetworkState
-import com.jeremy.thunder.ThunderError
-import com.jeremy.thunder.ThunderState
-import com.jeremy.thunder.WebSocket
+import com.jeremy.thunder.core.NetworkState
+import com.jeremy.thunder.core.ThunderError
+import com.jeremy.thunder.core.ThunderState
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache
-import com.jeremy.thunder.WebSocketEvent
 import com.jeremy.thunder.network.NetworkConnectivityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -31,14 +29,14 @@ class ThunderStateManager private constructor(
     networkState: NetworkConnectivityService,
     private val recoveryCache: RecoveryCache,
     private val valveCache: ValveCache,
-    private val webSocketCore: WebSocket.Factory,
+    private val webSocketCore: com.jeremy.thunder.core.WebSocket.Factory,
     private val scope: CoroutineScope
 ) {
-    lateinit var socket: WebSocket
+    lateinit var socket: com.jeremy.thunder.core.WebSocket
 
     private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
 
-    private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
+    private val _events = MutableSharedFlow<com.jeremy.thunder.core.WebSocketEvent>(replay = 1)
 
     private var _lastSocketState: ThunderState = ThunderState.IDLE
 
@@ -69,17 +67,17 @@ class ThunderStateManager private constructor(
 
         _events.onEach {
             when (it) {
-                is WebSocketEvent.OnConnectionOpen -> {
+                is com.jeremy.thunder.core.WebSocketEvent.OnConnectionOpen -> {
                     _socketState.updateThunderState(ThunderState.CONNECTED)
                 }
 
-                is WebSocketEvent.OnMessageReceived -> Unit
+                is com.jeremy.thunder.core.WebSocketEvent.OnMessageReceived -> Unit
 
-                WebSocketEvent.OnConnectionClosed -> {
+                com.jeremy.thunder.core.WebSocketEvent.OnConnectionClosed -> {
                     _socketState.updateThunderState(ThunderState.DISCONNECTED)
                 }
 
-                is WebSocketEvent.OnConnectionError -> {
+                is com.jeremy.thunder.core.WebSocketEvent.OnConnectionError -> {
                     _socketState.updateThunderState(ThunderState.ERROR(ThunderError.SocketLoss(it.error)))
                 }
             }
@@ -155,7 +153,7 @@ class ThunderStateManager private constructor(
     class Factory(
         private val networkStatus: NetworkConnectivityService,
         private val cacheController: CacheController,
-        private val webSocketCore: WebSocket.Factory
+        private val webSocketCore: com.jeremy.thunder.core.WebSocket.Factory
     ) {
         fun create(): ThunderStateManager {
             return ThunderStateManager(

@@ -17,7 +17,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
 class Thunder private constructor(
-    private val webSocketCore: WebSocket.Factory,
+    private val webSocketCore: com.jeremy.thunder.core.WebSocket.Factory,
     serviceExecutor: ServiceExecutor,
     private val scope: CoroutineScope
 ) {
@@ -47,12 +47,12 @@ class Thunder private constructor(
     }
 
     class Builder {
-        private var webSocketCore: WebSocket.Factory? = null
+        private var webSocketCore: com.jeremy.thunder.core.WebSocket.Factory? = null
         private var thunderStateManager: ThunderStateManager? = null
         private var context: Context? = null
         private var needValveCache: Boolean = false
 
-        fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
+        fun webSocketCore(core: com.jeremy.thunder.core.WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
         fun setApplicationContext(context: Context): Builder = apply { this.context = context }
 
@@ -77,7 +77,7 @@ class Thunder private constructor(
             return NetworkConnectivityServiceImpl(checkNotNull(context))
         }
 
-        private fun createEventProcessor(): EventProcessor<WebSocketEvent> {
+        private fun createEventProcessor(): EventProcessor<com.jeremy.thunder.core.WebSocketEvent> {
             return WebSocketEventProcessor()
         }
 

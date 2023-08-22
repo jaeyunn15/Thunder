@@ -12,10 +12,10 @@ class EventMapper<T> constructor(
     private val converter: Converter<T>
 ) {
 
-    fun mapEvent(flow: Flow<WebSocketEvent>): Flow<T?> = flow.filter {
-        it is WebSocketEvent.OnMessageReceived
+    fun mapEvent(flow: Flow<com.jeremy.thunder.core.WebSocketEvent>): Flow<T?> = flow.filter {
+        it is com.jeremy.thunder.core.WebSocketEvent.OnMessageReceived
     }.map {
-        (it as WebSocketEvent.OnMessageReceived).data
+        (it as com.jeremy.thunder.core.WebSocketEvent.OnMessageReceived).data
     }.map {
         try {
             val result = converter.convert(it)

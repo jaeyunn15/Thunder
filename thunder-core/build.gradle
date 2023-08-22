@@ -5,28 +5,8 @@ plugins {
     id 'maven-publish'
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                groupId = 'com.jeremy.thunder'
-                artifactId = 'thunder'
-                version = '0.0.7'
-            }
-
-            debug(MavenPublication) {
-                from components.debug
-                groupId = 'com.jeremy.thunder'
-                artifactId = 'thunder'
-                version = '0.0.7'
-            }
-        }
-    }
-}
-
 android {
-    namespace 'com.jeremy.thunder'
+    namespace 'com.jeremy.thunder.core'
     compileSdk 33
 
     defaultConfig {
@@ -53,14 +33,7 @@ android {
 }
 
 dependencies {
-    implementation project(path: ':thunder-cache')
-    api project(path: ':thunder-core')
-
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
-    implementation 'com.squareup.okhttp3:okhttp:4.9.2'
-    implementation 'com.squareup.okhttp3:logging-interceptor:4.9.2'
-
-    implementation 'com.google.code.gson:gson:2.9.0'
 }

@@ -1,6 +1,5 @@
 package com.jeremy.thunder.cache
 
-import com.jeremy.thunder.ThunderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -28,8 +27,8 @@ class ValveCache(
         onBufferOverflow = BufferOverflow.SUSPEND
     )
 
-    fun onUpdateValveState(state: ThunderState) {
-        if (state == ThunderState.CONNECTED) {
+    fun onUpdateValveState(state: com.jeremy.thunder.core.ThunderState) {
+        if (state == com.jeremy.thunder.core.ThunderState.CONNECTED) {
             isEmissiable.update { true }
         } else {
             isEmissiable.update { false }

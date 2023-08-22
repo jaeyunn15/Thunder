@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.core
 
 sealed interface ThunderError {
     data class NetworkLoss(

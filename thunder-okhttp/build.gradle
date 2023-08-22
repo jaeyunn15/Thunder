@@ -53,13 +53,11 @@ android {
 }
 
 dependencies {
-    api project(path: ':thunder-state')
+    api project(path: ':thunder-core')
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
 
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     implementation 'com.squareup.okhttp3:logging-interceptor:4.9.2'
-
-    implementation 'com.google.code.gson:gson:2.9.0'
 }
