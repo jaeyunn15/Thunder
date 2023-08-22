@@ -1,5 +1,8 @@
 package com.jeremy.thunder
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import okhttp3.OkHttpClient
 import java.lang.reflect.Array
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.ParameterizedType
@@ -50,4 +53,11 @@ fun getParameterUpperBound(index: Int, type: ParameterizedType): Type {
     return if (paramType is WildcardType) {
         paramType.upperBounds[0]
     } else paramType
+}
+
+fun OkHttpClient.makeWebSocketCore(url: String): com.jeremy.thunder.core.WebSocket.Factory {
+    return OkHttpWebSocket.Factory(
+        provider = ConnectionProvider(this, url),
+        scope = CoroutineScope(SupervisorJob())
+    )
 }
