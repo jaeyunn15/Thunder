@@ -1,5 +1,3 @@
-# 🚧🚧🚧🚧 Work In Progress 🚧🚧🚧🚧
-
 # Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.10-green.svg)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
