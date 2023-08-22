@@ -6,17 +6,17 @@ import com.jeremy.thunder.ThunderError
 import com.jeremy.thunder.ThunderState
 import com.jeremy.thunder.WebSocket
 import com.jeremy.thunder.cache.CacheController
+import com.jeremy.thunder.cache.RecoveryCache
+import com.jeremy.thunder.cache.ValveCache
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.network.NetworkConnectivityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -25,35 +25,34 @@ import kotlinx.coroutines.flow.onEach
 * Manage ThunderState as SocketState using NetworkState
 * ThunderState에 따라 Socket Lifecycle Manage
 *
-* //23.08.15: 캐싱 처리 정책 필요 (시작-종단 지점이 불명확)
 * */
 
 class ThunderStateManager private constructor(
     networkState: NetworkConnectivityService,
-    private val cacheController: CacheController,
+    private val recoveryCache: RecoveryCache,
+    private val valveCache: ValveCache,
     private val webSocketCore: WebSocket.Factory,
     private val scope: CoroutineScope
 ) {
     lateinit var socket: WebSocket
 
-    private val _requestFlow = MutableSharedFlow<Pair<String, String>?>(
-        replay = 0,
-        extraBufferCapacity = 100,
-        onBufferOverflow = BufferOverflow.SUSPEND
-    )
     private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
 
     private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
 
     private var _lastSocketState: ThunderState = ThunderState.IDLE
 
-    fun collectThunderState() = _socketState.asStateFlow()
+    fun thunderStateAsFlow() = _socketState.asStateFlow()
 
     fun thunderState() = _socketState.value
 
     fun collectWebSocketEvent() = _events.asSharedFlow()
 
     init {
+        _socketState.onEach {
+            valveCache.onUpdateValveState(it)
+        }.launchIn(scope)
+
         networkState.networkStatus.onEach {
             when (it) {
                 NetworkState.Available -> {
@@ -81,49 +80,52 @@ class ThunderStateManager private constructor(
                 }
 
                 is WebSocketEvent.OnConnectionError -> {
-
                     _socketState.updateThunderState(ThunderState.ERROR(ThunderError.SocketLoss(it.error)))
                 }
             }
         }.launchIn(scope)
 
+        /*
+        * requestFlow로 요청 사항이 흘러 들어오면 우선적으로 ValveControl에 보냄
+        * valve 활성화에 따라 다시 흘려보냄.
+        * */
+
         combine(
             _socketState,
-            _requestFlow.filterNotNull()
+            valveCache.emissionOfValveFlow()
         ) { currentState, request ->
+
             when (currentState) {
                 ThunderState.IDLE -> Unit
                 ThunderState.CONNECTING -> {
-                    cacheController.set(request.first, request.second)
                 }
                 ThunderState.CONNECTED -> {
-                    if (
-                        (_lastSocketState is ThunderState.ERROR || _lastSocketState is ThunderState.CONNECTING)
-                        && cacheController.hasCache()
-                    ) {
-                        // Last State : CONNECTING, ERROR
-                        cacheController.get().forEach(::requestSendMessage)
-                        cacheController.clear()
+                    if (_lastSocketState is ThunderState.ERROR && recoveryCache.hasCache()) {
+                        // Last State : ERROR - this is recovery for socket, network error
+                        recoveryCache.get().forEach(::requestSendMessage)
+                        recoveryCache.clear()
                     } else {
                         // General State
-                        requestSendMessage(request.second)
+                        request.forEach(::requestSendMessage)
                     }
                 }
                 ThunderState.DISCONNECTING -> {
-                    cacheController.clear()
+
                 }
                 ThunderState.DISCONNECTED -> {
-                    cacheController.clear()
+
                 }
                 is ThunderState.ERROR -> {
-                    cacheController.set(request.first, request.second)
+
                 }
             }
         }.launchIn(scope)
     }
 
     private fun requestSendMessage(message: String) {
-        socket.send(message)
+        if (socket.send(message)) {
+            recoveryCache.set(message)
+        }
     }
 
     private lateinit var connectionJob: Job
@@ -143,7 +145,7 @@ class ThunderStateManager private constructor(
     }
 
     fun send(key: String, message: String) {
-        _requestFlow.tryEmit(key to message)
+        valveCache.requestToValve(key to message)
     }
 
     private fun MutableStateFlow<ThunderState>.updateThunderState(state: ThunderState) {
@@ -158,7 +160,8 @@ class ThunderStateManager private constructor(
         fun create(): ThunderStateManager {
             return ThunderStateManager(
                 networkState = networkStatus,
-                cacheController = cacheController,
+                recoveryCache = cacheController.rCache,
+                valveCache = cacheController.vCache,
                 webSocketCore = webSocketCore,
                 scope = scope
             )

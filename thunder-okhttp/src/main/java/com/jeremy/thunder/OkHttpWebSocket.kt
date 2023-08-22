@@ -37,8 +37,8 @@ class OkHttpWebSocket internal constructor(
         return _event.asSharedFlow().filterNotNull()
     }
 
-    override fun send(data: String) {
-        socketHandler.send(data)
+    override fun send(data: String): Boolean {
+        return socketHandler.send(data)
     }
 
     override fun close(code: Int, reason: String) {

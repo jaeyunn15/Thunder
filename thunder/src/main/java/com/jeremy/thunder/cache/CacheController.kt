@@ -1,33 +1,37 @@
 package com.jeremy.thunder.cache
 
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
 
 /**
  * A controller that handles caching for requests from interfaces with the @Send annotation.
  * */
 
-class CacheController {
+class CacheController(
+    private val recoveryCache: RecoveryCache,
+    private val valveCache: ValveCache
+) {
 
-    private val requestCache: ConcurrentHashMap<String, String> = ConcurrentHashMap()
+    val rCache: RecoveryCache get() = recoveryCache
 
-    fun set(key: String, value: String) {
-        requestCache[key] = value
-    }
+    val vCache: ValveCache get() = valveCache
 
-    fun get(): List<String> {
-        return requestCache.map { it.value }
-    }
 
-    fun hasCache(): Boolean = requestCache.isNotEmpty()
+    class Factory(
+        private val scope: CoroutineScope
+    ) {
+        private fun createRecoveryCache(): RecoveryCache {
+            return RecoveryCache.Factory().create()
+        }
 
-    fun clear() {
-        requestCache.clear()
-    }
-
-    class Factory {
+        private fun createValveCache(): ValveCache {
+            return ValveCache.Factory(scope).create()
+        }
 
         fun create(): CacheController {
-            return CacheController()
+            return CacheController(
+                createRecoveryCache(),
+                createValveCache()
+            )
         }
     }
 }

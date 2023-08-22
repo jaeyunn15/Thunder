@@ -68,7 +68,9 @@ class Thunder private constructor(
         }
 
         private fun createCacheController(): CacheController {
-            return CacheController.Factory().create()
+            return CacheController.Factory(
+                scope = scope
+            ).create()
         }
 
         private fun createNetworkConnectivity(): NetworkConnectivityService {
@@ -92,17 +94,8 @@ class Thunder private constructor(
             return ServiceExecutor.Factory(createThunderProvider(), scope).create()
         }
 
-        private fun observeThunderState() {
-            thunderStateManager?.let {
-                it.collectThunderState().onEach {state ->
-
-                }.launchIn(scope)
-            }
-        }
-
         fun build(): Thunder {
             createThunderStateManager()
-            observeThunderState()
             return Thunder(
                 webSocketCore = checkNotNull(webSocketCore),
                 serviceExecutor = createServiceExecutor(),
