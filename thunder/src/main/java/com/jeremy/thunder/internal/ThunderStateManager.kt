@@ -8,7 +8,7 @@ import com.jeremy.thunder.WebSocket
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache
-import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.WebSocketEvent
 import com.jeremy.thunder.network.NetworkConnectivityService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job

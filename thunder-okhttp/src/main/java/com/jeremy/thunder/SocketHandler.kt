@@ -15,7 +15,7 @@ class SocketHandler : WebSocket {
 
     }
 
-    override fun events(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
+    override fun events(): Flow<WebSocketEvent> {
         return emptyFlow()
     }
 
