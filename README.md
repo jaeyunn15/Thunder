@@ -5,6 +5,13 @@ The overall design of this library is very similar to Scarlet.
 Currently, support only for Coroutine Flow.     
 
 ---
+## Feature
+- WebSocket connection using OkHttp3.
+- Provide retry and reconnect handling based on the application's network and socket state. (I called it valve cache, recovery cache)
+- Provide the ability to automatically recover requests via the last request cache.
+- (TBD) Provides a websocket connection based on the Stomp Message Protocol.
+
+---
 ## Download First
 
 First, go to your settings.gradle file and add the code below.
@@ -25,7 +32,7 @@ Use the library by adding a Dependency to the module you want to use.
 
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15:Thunder:x.y.z' //latest version = 0.0.10
+    implementation 'com.github.jaeyunn15:Thunder:0.0.10
 }
 ~~~
 
