@@ -1,32 +1,26 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.ui.favorite
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jeremy.thunder.socket.model.BinanceRequest
 import com.jeremy.thunder.socket.SocketService
-import com.jeremy.thunder.socket.model.Ticker
+import com.jeremy.thunder.socket.model.BinanceRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class FavoriteViewModel @Inject constructor(
     private val service: SocketService
 ) : ViewModel() {
 
-    private val _response = MutableStateFlow<Ticker?>(null)
-    val response: StateFlow<Ticker?> = _response.asStateFlow()
-
-    fun request() {
+    fun requestSpecificTicker() {
         viewModelScope.launch {
             // 특정 2개의 티커만 조회
             service.request(
                 request = BinanceRequest(
+                    method = "SUBSCRIBE",
                     params = listOf(
                         "btcusdt@markPrice",
                         "ethusdt@markPrice"
@@ -36,18 +30,19 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun requestAllMarket() {
-        //전체 마켓 데이터 조회
-        service.request(request = BinanceRequest(params = listOf("!markPrice@arr")))
+    fun requestCancelSpecificTicker() {
+        service.request(
+            request = BinanceRequest(
+                method = "UNSUBSCRIBE",
+                params = listOf(
+                    "btcusdt@markPrice",
+                    "ethusdt@markPrice"
+                )
+            )
+        )
     }
 
-    fun observeAllMarket() {
-        service.observeAllMarkets().onEach {
-
-        }.launchIn(viewModelScope)
-    }
-
-    fun observeTicker() {
+    fun observeSpecificTicker() {
         service.observeTicker().onEach {
 
         }.launchIn(viewModelScope)

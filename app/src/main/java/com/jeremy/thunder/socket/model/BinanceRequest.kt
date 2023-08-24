@@ -1,4 +1,4 @@
-package com.jeremy.thunder.socket
+package com.jeremy.thunder.socket.model
 
 data class BinanceRequest(
     val id: Int = 1,

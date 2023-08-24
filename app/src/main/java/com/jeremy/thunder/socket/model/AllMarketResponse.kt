@@ -1,4 +1,4 @@
-package com.jeremy.thunder.socket
+package com.jeremy.thunder.socket.model
 
 import com.google.gson.annotations.SerializedName
 
