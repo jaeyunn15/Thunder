@@ -102,7 +102,9 @@ class ThunderStateManager private constructor(
                 ThunderState.CONNECTED -> {
                     if (_lastSocketState is ThunderState.ERROR && recoveryCache.hasCache()) {
                         // Last State : ERROR - this is recovery for socket, network error
-                        recoveryCache.get().forEach(::requestSendMessage)
+                        recoveryCache.get()?.let {
+                            requestSendMessage(it)
+                        }
                         recoveryCache.clear()
                     } else {
                         // General State

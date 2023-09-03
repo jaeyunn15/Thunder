@@ -1,6 +1,5 @@
 package com.jeremy.thunder.cache
 
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A controller that handles caching for requests from interfaces with the @Send annotation.
@@ -9,24 +8,20 @@ import java.util.concurrent.ConcurrentHashMap
 
 class RecoveryCache {
 
-    private val requestCache: ConcurrentHashMap<String, String> = ConcurrentHashMap()
-
-    fun set(key: String, value: String) {
-        requestCache[key] = value
-    }
+    private var latestRequest: String? = null
 
     fun set(value: String) {
-        requestCache[value] =value
+        latestRequest = value
     }
 
-    fun get(): List<String> {
-        return requestCache.map { it.value }
+    fun get(): String? {
+        return latestRequest
     }
 
-    fun hasCache(): Boolean = requestCache.isNotEmpty()
+    fun hasCache(): Boolean = latestRequest != null
 
     fun clear() {
-        requestCache.clear()
+        latestRequest = null
     }
 
     class Factory {
