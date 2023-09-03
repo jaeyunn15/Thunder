@@ -2,13 +2,14 @@ package com.jeremy.thunder.cache
 
 import com.jeremy.thunder.ThunderState
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * A cache that locks the valve if the current state of the ThunderState is not Connected,
@@ -22,34 +23,32 @@ class ValveCache(
 ) {
     private val isEmissiable = MutableStateFlow<Boolean>(true)
 
-    private val valveCache = MutableSharedFlow<Pair<String,String>>(
-        replay = 0,
-        extraBufferCapacity = 100,
-        onBufferOverflow = BufferOverflow.SUSPEND
-    )
+    private val innerQueue = ConcurrentLinkedQueue<Pair<String,String>>()
+
+    private fun cacheFlow(): Flow<List<String>> {
+        return flow {
+            while (currentCoroutineContext().isActive) {
+                if (isEmissiable.value && innerQueue.isNotEmpty()) {
+                    val emitCacheList = mutableListOf<String>()
+                    while (innerQueue.isNotEmpty()) {
+                        innerQueue.poll()?.let { emitCacheList.add(it.second) }
+                    }
+                    emit(emitCacheList)
+                }
+                delay(300)
+            }
+        }
+    }
 
     fun onUpdateValveState(state: ThunderState) {
-        if (state == ThunderState.CONNECTED) {
-            isEmissiable.update { true }
-        } else {
-            isEmissiable.update { false }
-        }
+        isEmissiable.update { state == ThunderState.CONNECTED }
     }
 
     fun requestToValve(request: Pair<String, String>) {
-        valveCache.tryEmit(request)
+        innerQueue.add(request)
     }
 
-    fun emissionOfValveFlow(): Flow<List<String>> = combine(
-        isEmissiable,
-        valveCache.map { it.second }
-    ) { isEmissiable, cache ->
-        if (isEmissiable) {
-            listOf(cache)
-        } else {
-            emptyList()
-        }
-    }
+    fun emissionOfValveFlow(): Flow<List<String>> = cacheFlow()
 
     class Factory(
         private val scope: CoroutineScope
