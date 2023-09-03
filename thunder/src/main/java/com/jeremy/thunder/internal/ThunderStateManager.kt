@@ -1,10 +1,10 @@
 package com.jeremy.thunder.internal
 
-import com.jeremy.thunder.CoroutineScope.scope
-import com.jeremy.thunder.NetworkState
-import com.jeremy.thunder.ThunderError
-import com.jeremy.thunder.ThunderState
-import com.jeremy.thunder.WebSocket
+import com.jeremy.thunder.coroutine.CoroutineScope.scope
+import com.jeremy.thunder.state.NetworkState
+import com.jeremy.thunder.state.ThunderError
+import com.jeremy.thunder.state.ThunderState
+import com.jeremy.thunder.ws.WebSocket
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache

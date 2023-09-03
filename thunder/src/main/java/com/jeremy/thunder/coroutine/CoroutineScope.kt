@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.coroutine
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

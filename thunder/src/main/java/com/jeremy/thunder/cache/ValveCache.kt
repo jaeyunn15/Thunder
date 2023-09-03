@@ -1,6 +1,6 @@
 package com.jeremy.thunder.cache
 
-import com.jeremy.thunder.ThunderState
+import com.jeremy.thunder.state.ThunderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay

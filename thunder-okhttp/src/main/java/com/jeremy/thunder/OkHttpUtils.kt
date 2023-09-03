@@ -1,5 +1,6 @@
 package com.jeremy.thunder
 
+import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient

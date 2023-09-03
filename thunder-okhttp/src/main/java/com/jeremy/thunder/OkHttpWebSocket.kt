@@ -1,6 +1,7 @@
 package com.jeremy.thunder
 
 import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.ws
 
 import com.jeremy.thunder.event.WebSocketEvent
 import kotlinx.coroutines.flow.Flow

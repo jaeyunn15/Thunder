@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.event
 
 import java.lang.reflect.Type
 

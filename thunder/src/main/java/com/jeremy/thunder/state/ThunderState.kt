@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.state
 
 /**
  * Socket Thunder State

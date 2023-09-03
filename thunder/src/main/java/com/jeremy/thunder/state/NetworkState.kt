@@ -1,4 +1,4 @@
-package com.jeremy.thunder
+package com.jeremy.thunder.state
 
 sealed interface NetworkState {
     object Available : NetworkState

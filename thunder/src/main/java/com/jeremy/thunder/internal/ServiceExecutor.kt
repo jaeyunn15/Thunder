@@ -1,8 +1,8 @@
 package com.jeremy.thunder.internal
 
 import com.google.gson.Gson
-import com.jeremy.thunder.ConvertAdapter
-import com.jeremy.thunder.SocketEventKeyStore
+import com.jeremy.thunder.event.ConvertAdapter
+import com.jeremy.thunder.event.SocketEventKeyStore
 import com.jeremy.thunder.getAboutRawType
 import com.jeremy.thunder.getParameterUpperBound
 import kotlinx.coroutines.CoroutineScope
