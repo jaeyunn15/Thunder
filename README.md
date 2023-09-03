@@ -1,4 +1,4 @@
-# Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.10-green.svg)
+# Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.15-green.svg)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 The overall design of this library is very similar to Scarlet.     
@@ -32,7 +32,8 @@ Use the library by adding a Dependency to the module you want to use.
 
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15:Thunder:0.0.10
+    implementation 'com.github.jaeyunn15.Thunder:thunder:0.0.15'
+    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:0.0.15'
 }
 ~~~
 
@@ -97,6 +98,19 @@ Alternatively, you can use a dependency injection library like Hilt to create th
             .setApplicationContext(context)
             .build()
             .create()
+    }
+
+    // or you can like this. (Kotlin Type-Safe Builder)
+    @Provides
+    @Singleton
+    fun provideSocketService(
+        okHttpClient: OkHttpClient,
+        @ApplicationContext context: Context
+    ): SocketService {
+        return thunder {
+            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+            setApplicationContext(context)
+        }.create()
     }
 ~~~
 
