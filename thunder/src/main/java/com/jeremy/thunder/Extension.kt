@@ -51,3 +51,9 @@ fun getParameterUpperBound(index: Int, type: ParameterizedType): Type {
         paramType.upperBounds[0]
     } else paramType
 }
+
+inline fun thunder(init: Thunder.Builder.() -> Unit): Thunder {
+    val thunder = Thunder.Builder()
+    thunder.init()
+    return thunder.build()
+}

@@ -10,12 +10,12 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
-                artifactId = 'thunder-okhttp'
+                artifactId = 'thunder'
             }
 
             debug(MavenPublication) {
                 from components.debug
-                artifactId = 'thunder-okhttp'
+                artifactId = 'thunder'
             }
         }
     }

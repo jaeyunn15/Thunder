@@ -4,6 +4,7 @@ import android.content.Context
 import com.jeremy.thunder.Thunder
 import com.jeremy.thunder.makeWebSocketCore
 import com.jeremy.thunder.socket.SocketService
+import com.jeremy.thunder.thunder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,10 +34,9 @@ internal object SocketModule {
         okHttpClient: OkHttpClient,
         @ApplicationContext context: Context
     ): SocketService {
-        return Thunder.Builder()
-            .webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
-            .setApplicationContext(context)
-            .build()
-            .create()
+        return thunder {
+            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+            setApplicationContext(context)
+        }.create()
     }
 }
