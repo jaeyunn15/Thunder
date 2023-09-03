@@ -10,12 +10,16 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
+                groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder'
+                version = '0.0.1'
             }
 
             debug(MavenPublication) {
                 from components.debug
+                groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder'
+                version = '0.0.1'
             }
         }
     }

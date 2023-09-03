@@ -10,12 +10,16 @@ afterEvaluate {
         publications {
             release(MavenPublication) {
                 from components.release
-                artifactId = 'thunder'
+                groupId = 'com.jeremy.thunder'
+                artifactId = 'thunder-okhttp'
+                version = '0.0.1'
             }
 
             debug(MavenPublication) {
                 from components.debug
-                artifactId = 'thunder'
+                groupId = 'com.jeremy.thunder'
+                artifactId = 'thunder-okhttp'
+                version = '0.0.1'
             }
         }
     }
