@@ -1,4 +1,4 @@
-# Thunder ![Generic badge](https://img.shields.io/badge/version-0.0.15-green.svg)
+# Thunder [![](https://jitpack.io/v/jaeyunn15/Thunder.svg)](https://jitpack.io/#jaeyunn15/Thunder)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 The overall design of this library is very similar to Scarlet.     
