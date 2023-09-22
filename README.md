@@ -32,8 +32,8 @@ Use the library by adding a Dependency to the module you want to use.
 
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15.Thunder:thunder:0.0.15'
-    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:0.0.15'
+    implementation 'com.github.jaeyunn15.Thunder:thunder:0.0.17'
+    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:0.0.17'
 }
 ~~~
 
