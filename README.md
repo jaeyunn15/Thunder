@@ -39,8 +39,7 @@ dependencies {
 
 ---
 ## Restriction 🚨
-We need to target **Java 17** because the library is aligned with **Java 17**.      
-In the future, we will respond by lowering the Java version.
+The minimum SDK version provided by Thunder is 24.
 
 
 
