@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 
 /**
- * mapEvent 내에서 convert가 실패하면 다른 응답이기에 실패했다고 봐야 하는지?
+ * [EventMapper] - Convert WebSocketEvent to Generic type data.
 * */
 
 class EventMapper<T> constructor(
@@ -23,6 +23,16 @@ class EventMapper<T> constructor(
         } catch (e: Exception) {
             null
         }
+    }
+
+    fun mapEvent(event: WebSocketEvent): T? = if (event is WebSocketEvent.OnMessageReceived) {
+        try {
+            converter.convert(event.data)
+        } catch (e: Exception) {
+            null
+        }
+    } else {
+        null
     }
 
     class Factory {

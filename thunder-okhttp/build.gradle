@@ -12,21 +12,19 @@ afterEvaluate {
                 from components.release
                 groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder-okhttp'
-                version = '0.0.1'
             }
 
             debug(MavenPublication) {
                 from components.debug
                 groupId = 'com.jeremy.thunder'
                 artifactId = 'thunder-okhttp'
-                version = '0.0.1'
             }
         }
     }
 }
 
 android {
-    namespace 'com.jeremy.thunder'
+    namespace 'com.jeremy.thunder.okhttp'
     compileSdk 33
 
     defaultConfig {
@@ -44,11 +42,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = '1.8'
     }
 }
 

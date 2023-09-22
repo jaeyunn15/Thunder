@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -30,33 +31,22 @@ class ServiceExecutor internal constructor(
         return when (method.genericReturnType.getAboutRawType()) {
             Flow::class.java -> {
                 method.requireParameterTypes { "Receive method must have zero parameter: $method" }
-
                 method.requireReturnTypeIsOneOf(ParameterizedType::class.java) { "Receive method must return ParameterizedType: $method" }
-
-                val returnType =
-                    (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
-
+                val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
                 val converter = ConvertAdapter.Factory().create(returnType)
-
-                // 특정 리턴 타입에 해당 하는 매퍼를 반환
-                val eventMapper =
-                    SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter)
-
-                // 특정 EventMapper로만 직렬화되는 파이프라인 생성
-                createReceivePipeline(
-                    mappingEventFlow = eventMapper.mapEvent(thunderProvider.observeEvent()).filterNotNull()
-                ).receiveFlow()
+                val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter)
+                thunderProvider.observeEvent()
+                    .map(eventMapper::mapEvent)
+                    .filterNotNull()
+                    .createPipeline()
+                    .receiveFlow()
             }
 
             else -> require(false) { "Wrapper Type must be Flow." }
         }
     }
 
-    private fun createReceivePipeline(
-        mappingEventFlow: Flow<Any>
-    ): ReceivePipeline<*> {
-        return ReceivePipeline(socketEventFlow = mappingEventFlow, scope = scope)
-    }
+    private fun Flow<Any>.createPipeline(): ReceivePipeline<*> = ReceivePipeline(this, scope)
 
     fun executeSend(method: Method, args: Array<out Any>) {
         require(args.isNotEmpty()) { "@Send method require at least 1 arguments for execute service" }
