@@ -1,15 +1,19 @@
 package com.jeremy.thunder.internal
 
-import com.jeremy.thunder.coroutine.CoroutineScope.scope
-import com.jeremy.thunder.state.NetworkState
-import com.jeremy.thunder.state.ThunderError
-import com.jeremy.thunder.state.ThunderState
-import com.jeremy.thunder.ws.WebSocket
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache
+import com.jeremy.thunder.connection.AppConnectionListener
+import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.network.NetworkConnectivityService
+import com.jeremy.thunder.state.GetReady
+import com.jeremy.thunder.state.Initialize
+import com.jeremy.thunder.state.NetworkState
+import com.jeremy.thunder.state.ShutDown
+import com.jeremy.thunder.state.ThunderError
+import com.jeremy.thunder.state.ThunderState
+import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,20 +25,20 @@ import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
-/*
-* Manage ThunderState as SocketState using NetworkState
-* ThunderState에 따라 Socket Lifecycle Manage
-*
+/**
+ * Manage ThunderState as SocketState using NetworkState
+ *
 * */
 
 class ThunderStateManager private constructor(
+    connectionListener: AppConnectionListener,
     networkState: NetworkConnectivityService,
     private val recoveryCache: RecoveryCache,
     private val valveCache: ValveCache,
     private val webSocketCore: WebSocket.Factory,
     private val scope: CoroutineScope
 ) {
-    lateinit var socket: WebSocket
+    private var socket: WebSocket? = null
 
     private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
 
@@ -51,6 +55,18 @@ class ThunderStateManager private constructor(
     init {
         _socketState.onEach {
             valveCache.onUpdateValveState(it)
+        }.launchIn(scope)
+
+        connectionListener.collectState().onEach {
+            when(it) {
+                GetReady -> {
+                    openConnection()
+                }
+                ShutDown -> {
+                    closeConnection()
+                }
+                Initialize -> Unit
+            }
         }.launchIn(scope)
 
         networkState.networkStatus.onEach {
@@ -85,16 +101,10 @@ class ThunderStateManager private constructor(
             }
         }.launchIn(scope)
 
-        /*
-        * requestFlow로 요청 사항이 흘러 들어오면 우선적으로 ValveControl에 보냄
-        * valve 활성화에 따라 다시 흘려보냄.
-        * */
-
         combine(
             _socketState,
             valveCache.emissionOfValveFlow()
         ) { currentState, request ->
-
             when (currentState) {
                 ThunderState.IDLE -> Unit
                 ThunderState.CONNECTING -> {
@@ -124,25 +134,29 @@ class ThunderStateManager private constructor(
         }.launchIn(scope)
     }
 
-    private fun requestSendMessage(message: String) {
-        if (socket.send(message)) {
+    private fun requestSendMessage(message: String) = socket?.let{
+        if (it.send(message)) {
             recoveryCache.set(message)
         }
     }
 
     private lateinit var connectionJob: Job
-
     private fun openConnection() {
-        socket = webSocketCore.create()
-        socket.open()
-        if (::connectionJob.isInitialized) connectionJob.cancel()
-        connectionJob = socket.events().onEach { _events.tryEmit(it) }.launchIn(scope)
+        if (socket == null) {
+            socket = webSocketCore.create()
+            socket?.let { webSocket ->
+                webSocket.open()
+                if (::connectionJob.isInitialized) connectionJob.cancel()
+                connectionJob = webSocket.events().onEach { _events.tryEmit(it) }.launchIn(scope)
+            }
+        }
     }
 
     private fun closeConnection() {
-        if (::socket.isInitialized) {
-            socket.close(1000, "shutdown")
+        socket?.let {
+            it.close(1000, "shutdown")
             if (::connectionJob.isInitialized) connectionJob.cancel()
+            socket = null
         }
     }
 
@@ -155,12 +169,14 @@ class ThunderStateManager private constructor(
     }
 
     class Factory(
+        private val connectionListener: AppConnectionListener,
         private val networkStatus: NetworkConnectivityService,
         private val cacheController: CacheController,
         private val webSocketCore: WebSocket.Factory
     ) {
         fun create(): ThunderStateManager {
             return ThunderStateManager(
+                connectionListener = connectionListener,
                 networkState = networkStatus,
                 recoveryCache = cacheController.rCache,
                 valveCache = cacheController.vCache,

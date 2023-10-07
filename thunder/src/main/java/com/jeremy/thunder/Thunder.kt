@@ -1,8 +1,10 @@
 package com.jeremy.thunder
 
+import android.app.Application
 import android.content.Context
-import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.cache.CacheController
+import com.jeremy.thunder.connection.AppConnectionProvider
+import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.EventProcessor
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.WebSocketEventProcessor
@@ -52,16 +54,21 @@ class Thunder private constructor(
         private var webSocketCore: WebSocket.Factory? = null
         private var thunderStateManager: ThunderStateManager? = null
         private var context: Context? = null
+        private val appConnectionProvider by lazy { AppConnectionProvider() }
 
         fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
-        fun setApplicationContext(context: Context): Builder = apply { this.context = context }
+        fun setApplicationContext(context: Context): Builder = apply {
+            this.context = context
+            (this.context as Application).registerActivityLifecycleCallbacks(appConnectionProvider)
+        }
 
         private fun createThunderStateManager(): ThunderStateManager {
             thunderStateManager = ThunderStateManager.Factory(
-                createNetworkConnectivity(),
-                createCacheController(),
-                checkNotNull(webSocketCore)
+                connectionListener = appConnectionProvider,
+                networkStatus = createNetworkConnectivity(),
+                cacheController = createCacheController(),
+                webSocketCore = checkNotNull(webSocketCore)
             ).create()
             return checkNotNull(thunderStateManager)
         }
@@ -90,7 +97,10 @@ class Thunder private constructor(
         }
 
         private fun createServiceExecutor(): ServiceExecutor {
-            return ServiceExecutor.Factory(createThunderProvider(), scope).create()
+            return ServiceExecutor.Factory(
+                thunderProvider = createThunderProvider(),
+                scope = scope
+            ).create()
         }
 
         fun build(): Thunder {

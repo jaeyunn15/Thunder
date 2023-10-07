@@ -1,5 +1,6 @@
 package com.jeremy.thunder
 
+import android.util.Log
 import java.lang.reflect.Array
 import java.lang.reflect.GenericArrayType
 import java.lang.reflect.ParameterizedType
@@ -56,4 +57,8 @@ inline fun thunder(init: Thunder.Builder.() -> Unit): Thunder {
     val thunder = Thunder.Builder()
     thunder.init()
     return thunder.build()
+}
+
+internal fun thunderLog(value: String) {
+    Log.d("⚡️Thunder⚡️ :: ", value)
 }
