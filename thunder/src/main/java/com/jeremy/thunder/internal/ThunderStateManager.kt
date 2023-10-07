@@ -16,6 +16,7 @@ import com.jeremy.thunder.state.ThunderState
 import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -46,6 +47,12 @@ class ThunderStateManager private constructor(
 
     private var _lastSocketState: ThunderState = ThunderState.IDLE
 
+    /**
+     * If the device loses the network or the socket connection fails, it enters the error state below.
+     * This is used to use the cache for recovery when a [ThunderState.CONNECTED] is reached.
+     * */
+    private var isFromError = false
+
     fun thunderStateAsFlow() = _socketState.asStateFlow()
 
     fun thunderState() = _socketState.value
@@ -53,22 +60,35 @@ class ThunderStateManager private constructor(
     fun collectWebSocketEvent() = _events.asSharedFlow()
 
     init {
+        /**
+         * The following code is used to open the valve based on the socket state.
+        * */
         _socketState.onEach {
+            if (it is ThunderState.ERROR && networkState.hasAvailableNetworks()) {
+                closeConnection()
+                delay(500)
+                openConnection()
+            }
             valveCache.onUpdateValveState(it)
         }.launchIn(scope)
 
+        /**
+         * When an app is present in a process but offscreen, it automatically controls the connection based on two states to maintain the connection in the meantime.
+         * */
         connectionListener.collectState().onEach {
             when(it) {
+                Initialize -> Unit
                 GetReady -> {
+                    _socketState.updateThunderState(ThunderState.CONNECTING)
                     openConnection()
                 }
-                ShutDown -> {
-                    closeConnection()
-                }
-                Initialize -> Unit
+                ShutDown -> closeConnection()
             }
         }.launchIn(scope)
 
+        /**
+         * Used to change the ThunderState based on the device's network connection status.
+        * */
         networkState.networkStatus.onEach {
             when (it) {
                 NetworkState.Available -> {
@@ -77,6 +97,7 @@ class ThunderStateManager private constructor(
                 }
 
                 NetworkState.Unavailable -> {
+                    isFromError = true
                     _socketState.updateThunderState(ThunderState.ERROR(ThunderError.NetworkLoss(null)))
                     closeConnection()
                 }
@@ -96,6 +117,7 @@ class ThunderStateManager private constructor(
                 }
 
                 is WebSocketEvent.OnConnectionError -> {
+                    isFromError = true
                     _socketState.updateThunderState(ThunderState.ERROR(ThunderError.SocketLoss(it.error)))
                 }
             }
@@ -107,33 +129,26 @@ class ThunderStateManager private constructor(
         ) { currentState, request ->
             when (currentState) {
                 ThunderState.IDLE -> Unit
-                ThunderState.CONNECTING -> {
-                }
+                ThunderState.CONNECTING -> {}
                 ThunderState.CONNECTED -> {
-                    if (_lastSocketState is ThunderState.ERROR && recoveryCache.hasCache()) {
-                        // Last State : ERROR - this is recovery for socket, network error
-                        recoveryCache.get()?.let {
-                            requestSendMessage(it)
-                        }
+                    if (isFromError && recoveryCache.hasCache()) {
+                        recoveryCache.get()?.let { requestSendMessage(it) }
                         recoveryCache.clear()
+                        isFromError = false
                     } else {
-                        // General State
                         request.forEach(::requestSendMessage)
                     }
                 }
-                ThunderState.DISCONNECTING -> {
-
-                }
-                ThunderState.DISCONNECTED -> {
-
-                }
-                is ThunderState.ERROR -> {
-
-                }
+                ThunderState.DISCONNECTING -> {}
+                ThunderState.DISCONNECTED -> {}
+                is ThunderState.ERROR -> {}
             }
         }.launchIn(scope)
     }
 
+    /**
+     * After sending data using the socket, we store it in the recovery cache only after receiving a completion for the event.
+    * */
     private fun requestSendMessage(message: String) = socket?.let{
         if (it.send(message)) {
             recoveryCache.set(message)

@@ -2,6 +2,7 @@ package com.jeremy.thunder.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.socket.SocketService
 import com.jeremy.thunder.socket.model.AllMarketTickerResponseItem
 import com.jeremy.thunder.socket.model.BinanceRequest
@@ -20,6 +21,29 @@ class HomeViewModel @Inject constructor(
 
     private val _allMarketTickerFlow = MutableStateFlow<List<AllMarketTickerResponseItem>>(emptyList())
     val allMarketTickerFlow: Flow<List<AllMarketTickerResponseItem>> get() = _allMarketTickerFlow
+
+    private val _socketEventFlow = MutableStateFlow<String>("")
+    val socketEventFlow: Flow<String> get() = _socketEventFlow
+
+    init {
+        service.receiveEvent().onEach {
+            val state = when (it) {
+                is WebSocketEvent.OnConnectionOpen -> {
+                    "⚡️ WebSocket Connection Open..."
+                }
+                is WebSocketEvent.OnMessageReceived -> {
+                    "⚡️ WebSocket Receive Message..."
+                }
+                is WebSocketEvent.OnConnectionError -> {
+                    "⚡️ WebSocket Error for ${it.error}..."
+                }
+                WebSocketEvent.OnConnectionClosed -> {
+                    "⚡️ WebSocket Connection Close..."
+                }
+            }
+            _socketEventFlow.update { state }
+        }.launchIn(viewModelScope)
+    }
 
     fun requestAllMarketTicker() {
         service.request(

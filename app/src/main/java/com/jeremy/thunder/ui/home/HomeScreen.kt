@@ -1,10 +1,10 @@
 package com.jeremy.thunder.ui.home
 
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -43,17 +43,22 @@ fun HomeScreen(
     val tickerFlow =
         viewModel.allMarketTickerFlow.collectAsStateWithLifecycle(initialValue = emptyList()).value
 
+    val socketEventFlow =
+        viewModel.socketEventFlow.collectAsStateWithLifecycle(initialValue = "").value
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 15.dp, bottom = 15.dp, end = 10.dp, start = 10.dp),
     ) {
         Text(
-            text = "All Market Ticker",
+            text = "[WebSocket State] >> \n$socketEventFlow",
             color = Color.Gray,
             fontStyle = FontStyle.Normal,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 6.dp)
         )
+        Spacer(modifier = Modifier.height(10.dp))
         LazyColumn(content = {
             items(
                 count = tickerFlow.size,

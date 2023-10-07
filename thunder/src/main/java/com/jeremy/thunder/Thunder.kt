@@ -13,6 +13,7 @@ import com.jeremy.thunder.internal.ThunderProvider
 import com.jeremy.thunder.internal.ThunderStateManager
 import com.jeremy.thunder.network.NetworkConnectivityService
 import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
+import com.jeremy.thunder.ws.Event
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
 import com.jeremy.thunder.ws.WebSocket
@@ -43,6 +44,7 @@ class Thunder private constructor(
         method.annotations.getOrNull(0)?.let { annotation ->
             val args = nullableArgs ?: arrayOf()
             return@InvocationHandler when (annotation) {
+                is Event -> serviceExecutor.executeEvent(method, args)
                 is Send -> serviceExecutor.executeSend(method, args)
                 is Receive -> serviceExecutor.executeReceive(method, args)
                 else -> require(false) { "there is no matching annotation" }

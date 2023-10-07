@@ -5,5 +5,5 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
 object CoroutineScope {
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    internal val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 }

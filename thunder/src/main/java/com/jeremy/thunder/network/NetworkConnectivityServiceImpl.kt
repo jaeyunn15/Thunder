@@ -13,16 +13,24 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 
+
 class NetworkConnectivityServiceImpl constructor (
     context: Context
 ): NetworkConnectivityService {
 
+    private val networks = HashSet<Long>()
+
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    override fun hasAvailableNetworks(): Boolean = networks.isNotEmpty()
 
     override val networkStatus: Flow<NetworkState> = callbackFlow {
         val connectivityCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                trySend(NetworkState.Available)
+                networks.add(network.networkHandle)
+                if (networks.isNotEmpty()) {
+                    trySend(NetworkState.Available)
+                }
             }
 
             override fun onUnavailable() {
@@ -30,7 +38,10 @@ class NetworkConnectivityServiceImpl constructor (
             }
 
             override fun onLost(network: Network) {
-                trySend(NetworkState.Unavailable)
+                networks.remove(network.networkHandle)
+                if (networks.isEmpty()) {
+                    trySend(NetworkState.Unavailable)
+                }
             }
 
         }

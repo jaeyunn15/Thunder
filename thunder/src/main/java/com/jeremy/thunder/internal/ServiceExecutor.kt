@@ -3,6 +3,7 @@ package com.jeremy.thunder.internal
 import com.google.gson.Gson
 import com.jeremy.thunder.event.ConvertAdapter
 import com.jeremy.thunder.event.SocketEventKeyStore
+import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.getAboutRawType
 import com.jeremy.thunder.getParameterUpperBound
 import kotlinx.coroutines.CoroutineScope
@@ -25,9 +26,24 @@ class ServiceExecutor internal constructor(
     private val scope: CoroutineScope
 ) {
 
+    fun executeEvent(method: Method, args: Array<out Any>): Any {
+        require(method.genericReturnType != Flow::class.java) { "return type must flow" }
+        return when (method.genericReturnType.getAboutRawType()) {
+            Flow::class.java -> {
+                val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
+                require(returnType !is WebSocketEvent) { "Event annotation must require return type as WebSocketEvent." }
+                thunderProvider.observeEvent()
+                    .filterNotNull()
+                    .createPipeline()
+                    .receiveFlow()
+            }
+
+            else -> require(false) { "Wrapper Type must be Flow." }
+        }
+    }
+
     fun executeReceive(method: Method, args: Array<out Any>): Any {
         require(method.genericReturnType != Flow::class.java) { "return type must flow" }
-
         return when (method.genericReturnType.getAboutRawType()) {
             Flow::class.java -> {
                 method.requireParameterTypes { "Receive method must have zero parameter: $method" }
