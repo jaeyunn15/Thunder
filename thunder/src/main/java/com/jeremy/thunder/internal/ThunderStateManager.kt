@@ -78,10 +78,7 @@ class ThunderStateManager private constructor(
         connectionListener.collectState().onEach {
             when(it) {
                 Initialize -> Unit
-                GetReady -> {
-                    _socketState.updateThunderState(ThunderState.CONNECTING)
-                    openConnection()
-                }
+                GetReady -> openConnection()
                 ShutDown -> closeConnection()
             }
         }.launchIn(scope)
@@ -92,7 +89,6 @@ class ThunderStateManager private constructor(
         networkState.networkStatus.onEach {
             when (it) {
                 NetworkState.Available -> {
-                    _socketState.updateThunderState(ThunderState.CONNECTING)
                     openConnection()
                 }
 
@@ -158,6 +154,7 @@ class ThunderStateManager private constructor(
     private lateinit var connectionJob: Job
     private fun openConnection() {
         if (socket == null) {
+            _socketState.updateThunderState(ThunderState.CONNECTING)
             socket = webSocketCore.create()
             socket?.let { webSocket ->
                 webSocket.open()
