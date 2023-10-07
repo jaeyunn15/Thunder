@@ -28,12 +28,12 @@ dependencyResolutionManagement {
 }
 ~~~
 
-Use the library by adding a Dependency to the module you want to use.
-
+Use the library by adding a Dependency to the module you want to use.    
+Check Latest Version here : [![](https://jitpack.io/v/jaeyunn15/Thunder.svg)](https://jitpack.io/#jaeyunn15/Thunder)
 ~~~ groovy
 dependencies {
-    implementation 'com.github.jaeyunn15.Thunder:thunder:0.0.17'
-    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:0.0.17'
+    implementation 'com.github.jaeyunn15.Thunder:thunder:{latest_version}'
+    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:{latest_version}'
 }
 ~~~
 
