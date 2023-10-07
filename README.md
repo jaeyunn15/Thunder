@@ -55,6 +55,9 @@ interface SocketService {
 
     @Receive
     fun response(): Flow<TickerResponse>
+
+    @Event
+    fun receiveEvent(): Flow<WebSocketEvent>
 }
 ~~~
 
