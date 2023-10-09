@@ -9,6 +9,7 @@ Currently, support only for Coroutine Flow.
 - WebSocket connection using OkHttp3.
 - Provide retry and reconnect handling based on the application's network and socket state. (I called it valve cache, recovery cache)
 - Provide the ability to automatically recover requests via the last request cache.
+- Provides two converter adapters: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
 - (TBD) Provides a websocket connection based on the Stomp Message Protocol.
 
 ---
@@ -98,6 +99,7 @@ Alternatively, you can use a dependency injection library like Hilt to create th
         return Thunder.Builder()
             .webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
             .setApplicationContext(context)
+            .setConverterType(ConverterType.Serialization)
             .build()
             .create()
     }
@@ -112,6 +114,7 @@ Alternatively, you can use a dependency injection library like Hilt to create th
         return thunder {
             webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
             setApplicationContext(context)
+            setConverterType(ConverterType.Serialization)
         }.create()
     }
 ~~~
