@@ -99,7 +99,7 @@ Alternatively, you can use a dependency injection library like Hilt to create th
         return Thunder.Builder()
             .webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
             .setApplicationContext(context)
-            .setConverterType(ConverterType.Serialization)
+            .setConverterType(ConverterType.Gson)
             .build()
             .create()
     }
