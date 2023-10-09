@@ -37,7 +37,7 @@ internal object SocketModule {
         return thunder {
             webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
             setApplicationContext(context)
-            setConverterType(ConverterType.Serialization)
+            setConverterType(ConverterType.Gson)
         }.create()
     }
 }

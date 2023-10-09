@@ -39,6 +39,7 @@ fun MainScreen() {
         Box(
             Modifier
                 .fillMaxSize()
+                .padding(bottom = it.calculateBottomPadding())
         ) {
             MainNavGraph(
                 navController = navController
