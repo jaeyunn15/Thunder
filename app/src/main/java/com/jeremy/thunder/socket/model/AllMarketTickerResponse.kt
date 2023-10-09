@@ -1,13 +1,17 @@
 package com.jeremy.thunder.socket.model
 
 import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class AllMarketTickerResponse(
-    @SerializedName("stream")
+    //@SerializedName("stream")
     val stream: String = "",
 
-    @SerializedName("data")
-    val data: List<AllMarketTickerResponseItem> = emptyList()
+    //@SerializedName("data")
+    val data: List<AllMarketTickerResponseItem> = emptyList(),
+
+    val nickName: String = "default"
 )
 
 /*
@@ -38,25 +42,28 @@ data class AllMarketTickerResponse(
 *
 * */
 
+@Serializable
 data class AllMarketTickerResponseItem(
-    @SerializedName("E")
+    //@SerializedName("E")
     val E: Long, //event time
 
-    @SerializedName("P")
+    val e: String,
+
+    //@SerializedName("P")
     val P: String, // price change percent
 
-    @SerializedName("c")
+    //@SerializedName("c")
     val c: String, // last Price
 
-    @SerializedName("h")
+    //@SerializedName("h")
     val h: String, // high price
 
-    @SerializedName("l")
+    //@SerializedName("l")
     val l: String, // low price
 
-    @SerializedName("o")
+    //@SerializedName("o")
     val o: String, // open price
 
-    @SerializedName("s")
+//    @SerializedName("s")
     val s: String, // symbol
 )

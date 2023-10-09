@@ -4,6 +4,7 @@ plugins {
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
     id 'maven-publish'
+    id 'kotlinx-serialization'
 }
 
 android {
@@ -90,4 +91,6 @@ dependencies {
     kapt "com.google.dagger:hilt-compiler:2.44.2"
 
     implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.6.0-alpha01'
+
+    implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
 }

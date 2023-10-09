@@ -8,6 +8,7 @@ import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.EventProcessor
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.WebSocketEventProcessor
+import com.jeremy.thunder.event.converter.ConverterType
 import com.jeremy.thunder.internal.ServiceExecutor
 import com.jeremy.thunder.internal.ThunderProvider
 import com.jeremy.thunder.internal.ThunderStateManager
@@ -57,12 +58,17 @@ class Thunder private constructor(
         private var thunderStateManager: ThunderStateManager? = null
         private var context: Context? = null
         private val appConnectionProvider by lazy { AppConnectionProvider() }
+        private var converterType: ConverterType = ConverterType.Serialization
 
         fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
         fun setApplicationContext(context: Context): Builder = apply {
             this.context = context
             (this.context as Application).registerActivityLifecycleCallbacks(appConnectionProvider)
+        }
+
+        fun setConverterType(type: ConverterType) = apply {
+            converterType = type
         }
 
         private fun createThunderStateManager(): ThunderStateManager {
@@ -101,6 +107,7 @@ class Thunder private constructor(
         private fun createServiceExecutor(): ServiceExecutor {
             return ServiceExecutor.Factory(
                 thunderProvider = createThunderProvider(),
+                converterType = converterType,
                 scope = scope
             ).create()
         }

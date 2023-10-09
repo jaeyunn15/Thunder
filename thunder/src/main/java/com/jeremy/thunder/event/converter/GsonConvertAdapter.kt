@@ -1,4 +1,4 @@
-package com.jeremy.thunder.event
+package com.jeremy.thunder.event.converter
 
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter
@@ -6,11 +6,7 @@ import com.google.gson.reflect.TypeToken
 import java.io.StringReader
 import java.lang.reflect.Type
 
-interface Converter<T> {
-    fun convert(data: String): T
-}
-
-class ConvertAdapter<T> private constructor(
+class GsonConvertAdapter<T> private constructor(
     private val gson: Gson,
     private val typeAdapter: TypeAdapter<T>,
     private val type: Type
@@ -22,9 +18,9 @@ class ConvertAdapter<T> private constructor(
     }
 
     class Factory {
-        fun create(type: Type): ConvertAdapter<*> {
+        fun create(type: Type): GsonConvertAdapter<*> {
             val typeAdapter = Gson().getAdapter(TypeToken.get(type))
-            return ConvertAdapter(Gson(), typeAdapter, type)
+            return GsonConvertAdapter(Gson(), typeAdapter, type)
         }
     }
 }

@@ -1,7 +1,7 @@
 package com.jeremy.thunder.di
 
 import android.content.Context
-import com.jeremy.thunder.Thunder
+import com.jeremy.thunder.event.converter.ConverterType
 import com.jeremy.thunder.makeWebSocketCore
 import com.jeremy.thunder.socket.SocketService
 import com.jeremy.thunder.thunder
@@ -37,6 +37,7 @@ internal object SocketModule {
         return thunder {
             webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
             setApplicationContext(context)
+            setConverterType(ConverterType.Serialization)
         }.create()
     }
 }

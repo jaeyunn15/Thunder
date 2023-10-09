@@ -1,5 +1,6 @@
 package com.jeremy.thunder.event
 
+import com.jeremy.thunder.event.converter.Converter
 import java.lang.reflect.Type
 
 /**

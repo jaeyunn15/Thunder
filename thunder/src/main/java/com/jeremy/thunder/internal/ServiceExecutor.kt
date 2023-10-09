@@ -1,9 +1,12 @@
 package com.jeremy.thunder.internal
 
 import com.google.gson.Gson
-import com.jeremy.thunder.event.ConvertAdapter
 import com.jeremy.thunder.event.SocketEventKeyStore
 import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.event.converter.Converter
+import com.jeremy.thunder.event.converter.ConverterType
+import com.jeremy.thunder.event.converter.GsonConvertAdapter
+import com.jeremy.thunder.event.converter.SerializeConvertAdapter
 import com.jeremy.thunder.getAboutRawType
 import com.jeremy.thunder.getParameterUpperBound
 import kotlinx.coroutines.CoroutineScope
@@ -14,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
 
 /**
  * create logic by annotation
@@ -23,6 +27,7 @@ import java.lang.reflect.ParameterizedType
 
 class ServiceExecutor internal constructor(
     private val thunderProvider: ThunderProvider,
+    private val converterType: ConverterType,
     private val scope: CoroutineScope
 ) {
 
@@ -49,7 +54,9 @@ class ServiceExecutor internal constructor(
                 method.requireParameterTypes { "Receive method must have zero parameter: $method" }
                 method.requireReturnTypeIsOneOf(ParameterizedType::class.java) { "Receive method must return ParameterizedType: $method" }
                 val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
-                val converter = ConvertAdapter.Factory().create(returnType)
+                //val converter = ConvertAdapter.Factory().create(returnType)
+                //val converter = SerializeConvertAdapter.Factory().create(returnType)
+                val converter = checkConverterType(converterType, returnType)
                 val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter)
                 thunderProvider.observeEvent()
                     .map(eventMapper::mapEvent)
@@ -59,6 +66,13 @@ class ServiceExecutor internal constructor(
             }
 
             else -> require(false) { "Wrapper Type must be Flow." }
+        }
+    }
+
+    private fun checkConverterType(converterType: ConverterType, returnType: Type): Converter<out Any?> {
+        return when(converterType) {
+            ConverterType.Gson -> GsonConvertAdapter.Factory().create(returnType)
+            ConverterType.Serialization -> SerializeConvertAdapter.Factory().create(returnType)
         }
     }
 
@@ -74,11 +88,12 @@ class ServiceExecutor internal constructor(
 
     class Factory(
         private val thunderProvider: ThunderProvider,
-        private val scope: CoroutineScope
+        private val converterType: ConverterType,
+        private val scope: CoroutineScope,
     ) {
 
         fun create(): ServiceExecutor {
-            return ServiceExecutor(thunderProvider, scope)
+            return ServiceExecutor(thunderProvider, converterType, scope)
         }
     }
 
