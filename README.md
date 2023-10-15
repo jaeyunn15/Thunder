@@ -7,6 +7,7 @@ Currently, support only for Coroutine Flow.
 ---
 ## Feature
 - WebSocket connection using OkHttp3.
+- Regardless of the state of your app, if it's alive, it will automatically manage to stay connected. 
 - Provide retry and reconnect handling based on the application's network and socket state. (I called it valve cache, recovery cache)
 - Provide the ability to automatically recover requests via the last request cache.
 - Provides two converter adapters: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
