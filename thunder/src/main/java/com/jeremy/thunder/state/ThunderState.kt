@@ -35,6 +35,6 @@ sealed interface ThunderState {
      * Error State and [ThunderError] must be defined.
     * */
     data class ERROR(
-        val error: ThunderError
+        val error: ThunderError = ThunderError.General
     ) : ThunderState
 }

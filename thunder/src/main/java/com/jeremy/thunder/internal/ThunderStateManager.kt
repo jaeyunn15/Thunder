@@ -7,13 +7,16 @@ import com.jeremy.thunder.connection.AppConnectionListener
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.network.NetworkConnectivityService
-import com.jeremy.thunder.state.GetReady
+import com.jeremy.thunder.state.Background
+import com.jeremy.thunder.state.Foreground
 import com.jeremy.thunder.state.Initialize
 import com.jeremy.thunder.state.NetworkState
 import com.jeremy.thunder.state.ShutDown
 import com.jeremy.thunder.state.ThunderError
 import com.jeremy.thunder.state.ThunderState
+import com.jeremy.thunder.thunderLog
 import com.jeremy.thunder.ws.WebSocket
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,9 +25,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.plus
 
 /**
  * Manage ThunderState as SocketState using NetworkState
@@ -39,19 +43,23 @@ class ThunderStateManager private constructor(
     private val webSocketCore: WebSocket.Factory,
     private val scope: CoroutineScope
 ) {
+    private val innerScope = scope + CoroutineExceptionHandler { _, throwable ->
+        thunderLog("[ThunderStateManager] = ${throwable.message}")
+    }
+
     private var socket: WebSocket? = null
 
     private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
 
     private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
 
-    private var _lastSocketState: ThunderState = ThunderState.IDLE
-
     /**
      * If the device loses the network or the socket connection fails, it enters the error state below.
      * This is used to use the cache for recovery when a [ThunderState.CONNECTED] is reached.
      * */
-    private var isFromError = false
+    private var isReSubscription = false
+
+    private val _retryNeedFlag = MutableStateFlow<Boolean>(false)
 
     fun thunderStateAsFlow() = _socketState.asStateFlow()
 
@@ -61,85 +69,98 @@ class ThunderStateManager private constructor(
 
     init {
         /**
-         * The following code is used to open the valve based on the socket state.
-        * */
-        _socketState.onEach {
-            if (it is ThunderState.ERROR && networkState.hasAvailableNetworks()) {
-                closeConnection()
-                delay(500)
-                openConnection()
-            }
-            valveCache.onUpdateValveState(it)
-        }.launchIn(scope)
-
-        /**
-         * When an app is present in a process but offscreen, it automatically controls the connection based on two states to maintain the connection in the meantime.
+         * Update SocketState as ThunderState.
          * */
-        connectionListener.collectState().onEach {
-            when(it) {
-                Initialize -> Unit
-                GetReady -> openConnection()
-                ShutDown -> closeConnection()
-            }
-        }.launchIn(scope)
-
-        /**
-         * Used to change the ThunderState based on the device's network connection status.
-        * */
-        networkState.networkStatus.onEach {
-            when (it) {
-                NetworkState.Available -> {
-                    openConnection()
-                }
-
-                NetworkState.Unavailable -> {
-                    isFromError = true
-                    _socketState.updateThunderState(ThunderState.ERROR(ThunderError.NetworkLoss(null)))
-                    closeConnection()
-                }
-            }
-        }.launchIn(scope)
-
-        _events.onEach {
-            when (it) {
+        _events.onEach { event ->
+            when (event) {
                 is WebSocketEvent.OnConnectionOpen -> {
-                    _socketState.updateThunderState(ThunderState.CONNECTED)
+                    _socketState.update { ThunderState.CONNECTED }
                 }
 
                 is WebSocketEvent.OnMessageReceived -> Unit
 
                 WebSocketEvent.OnConnectionClosed -> {
-                    _socketState.updateThunderState(ThunderState.DISCONNECTED)
+                    _socketState.update { ThunderState.DISCONNECTED }
                 }
 
                 is WebSocketEvent.OnConnectionError -> {
-                    isFromError = true
-                    _socketState.updateThunderState(ThunderState.ERROR(ThunderError.SocketLoss(it.error)))
+                    isReSubscription = true
+                    _socketState.update { ThunderState.ERROR(ThunderError.SocketLoss(event.error)) }
                 }
             }
-        }.launchIn(scope)
+        }.launchIn(innerScope)
+
+        /**
+         * Open, Retry Connection work as network state.
+         * */
+        combine(
+            _retryNeedFlag,
+            networkState.networkStatus
+        ) { retry, network ->
+            when (network) {
+                NetworkState.Available -> {
+                    if (retry) {
+                        retryConnection()
+                    } else {
+                        openConnection()
+                    }
+                }
+                NetworkState.Unavailable -> {
+                    _socketState.update { ThunderState.ERROR(ThunderError.NetworkLoss) }
+                }
+            }
+        }.launchIn(innerScope)
+
+        /**
+         * Update RetryFlag And Valve And request socket message as upstream state.
+         * */
+        combine(
+            _socketState,
+            connectionListener.collectState()
+        ) { socketState, appState ->
+            when (appState) {
+                Initialize -> {
+                    openConnection()
+                }
+                Foreground -> {
+                    if (socketState is ThunderState.ERROR) {
+                        _retryNeedFlag.update { true }
+                    }
+                }
+                Background -> {}
+                ShutDown -> {
+                    closeConnection()
+                }
+            }
+            valveCache.onUpdateValveState(socketState)
+        }.launchIn(innerScope)
 
         combine(
             _socketState,
             valveCache.emissionOfValveFlow()
-        ) { currentState, request ->
-            when (currentState) {
-                ThunderState.IDLE -> Unit
-                ThunderState.CONNECTING -> {}
+        ) { currentSocketState, request ->
+            when (currentSocketState) {
                 ThunderState.CONNECTED -> {
-                    if (isFromError && recoveryCache.hasCache()) {
+                    if (isReSubscription && recoveryCache.hasCache()) {
                         recoveryCache.get()?.let { requestSendMessage(it) }
                         recoveryCache.clear()
-                        isFromError = false
+                        isReSubscription = false
                     } else {
                         request.forEach(::requestSendMessage)
                     }
                 }
-                ThunderState.DISCONNECTING -> {}
-                ThunderState.DISCONNECTED -> {}
-                is ThunderState.ERROR -> {}
+
+                else -> Unit
             }
-        }.launchIn(scope)
+        }.launchIn(innerScope)
+    }
+
+    private suspend fun retryConnection() {
+        thunderLog("Thunder retry connection work.")
+        closeConnection()
+        delay(RETRY_CONNECTION_GAP)
+        openConnection()
+        _retryNeedFlag.update { false }
     }
 
     /**
@@ -152,20 +173,22 @@ class ThunderStateManager private constructor(
     }
 
     private lateinit var connectionJob: Job
-    private fun openConnection() {
+    private fun openConnection() = synchronized(this) {
         if (socket == null) {
-            _socketState.updateThunderState(ThunderState.CONNECTING)
             socket = webSocketCore.create()
             socket?.let { webSocket ->
                 webSocket.open()
+                thunderLog("Thunder open connection work.")
                 if (::connectionJob.isInitialized) connectionJob.cancel()
-                connectionJob = webSocket.events().onEach { _events.tryEmit(it) }.launchIn(scope)
+                connectionJob = webSocket.events().onEach { _events.tryEmit(it) }.launchIn(innerScope)
             }
         }
     }
 
-    private fun closeConnection() {
+    private fun closeConnection() = synchronized(this) {
         socket?.let {
+            thunderLog("Thunder close connection work.")
+            _socketState.update { ThunderState.ERROR() }
             it.close(1000, "shutdown")
             if (::connectionJob.isInitialized) connectionJob.cancel()
             socket = null
@@ -174,10 +197,6 @@ class ThunderStateManager private constructor(
 
     fun send(key: String, message: String) {
         valveCache.requestToValve(key to message)
-    }
-
-    private fun MutableStateFlow<ThunderState>.updateThunderState(state: ThunderState) {
-        _lastSocketState = getAndUpdate { state }
     }
 
     class Factory(
@@ -196,5 +215,9 @@ class ThunderStateManager private constructor(
                 scope = scope
             )
         }
+    }
+
+    companion object {
+        private const val RETRY_CONNECTION_GAP = 500L
     }
 }

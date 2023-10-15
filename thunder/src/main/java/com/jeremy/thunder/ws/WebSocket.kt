@@ -10,15 +10,15 @@ interface WebSocket {
 
     fun events(): Flow<WebSocketEvent>
 
-    //websocket 메세지 전송
+    //Websocket send message
     fun send(data: String): Boolean
 
-    //websocket 연결 종료 - code & reason
+    //Websocket Connection close - code & reason
     fun close(code: Int, reason: String)
 
     fun cancel()
 
-    //websocket 연결 오류
+    //Websocket Connection failure
     fun error(t: String)
 
     interface Factory{
