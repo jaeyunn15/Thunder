@@ -6,12 +6,16 @@ import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.socket.SocketService
 import com.jeremy.thunder.socket.model.AllMarketTickerResponseItem
 import com.jeremy.thunder.socket.model.BinanceRequest
+import com.jeremy.thunder.socket.model.RequestFormatField
+import com.jeremy.thunder.socket.model.RequestTicketField
+import com.jeremy.thunder.socket.model.RequestTypeField
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -46,6 +50,19 @@ class HomeViewModel @Inject constructor(
     }
 
     fun requestAllMarketTicker() {
+        // upbit socket request
+        service.requestUpbit(
+            listOf(
+                RequestTicketField(ticket = UUID.randomUUID().toString()),
+                RequestTypeField(
+                    type = "ticker",
+                    codes = listOf("KRW-BTC","KRW-ETH")
+                ),
+                RequestFormatField()
+            )
+        )
+
+        // binance socket request subscribe
         service.request(
             request = BinanceRequest(
                 method = "SUBSCRIBE",
@@ -54,6 +71,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun requestCancelAllMarketTicker() {
+        // binance socket request unsubscribe
         service.request(
             request = BinanceRequest(
                 method = "UNSUBSCRIBE",
@@ -63,6 +81,10 @@ class HomeViewModel @Inject constructor(
     }
 
     fun observeAllMarket() {
+        service.collectUpbitTicker().onEach {
+            // this is upbit flow
+        }.launchIn(viewModelScope)
+
         service.observeAllMarketTickers().onEach { response ->
             _allMarketTickerFlow.update { response.data.sortedBy { it.c } }
         }.launchIn(viewModelScope)

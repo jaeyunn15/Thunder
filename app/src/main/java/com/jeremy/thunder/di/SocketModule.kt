@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -25,6 +26,10 @@ internal object SocketModule {
             .setLevel(HttpLoggingInterceptor.Level.BODY)
         return OkHttpClient.Builder()
             .addInterceptor(httpLoggingInterceptor)
+            .pingInterval(
+                10,
+                TimeUnit.SECONDS
+            ) // If there are no events for a minute, we need to put in some code for ping pong to output a socket connection error from okhttp.
             .build()
     }
 
@@ -35,7 +40,8 @@ internal object SocketModule {
         @ApplicationContext context: Context
     ): SocketService {
         return thunder {
-            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+//            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream")) // binance socket server
+            webSocketCore(okHttpClient.makeWebSocketCore("wss://api.upbit.com/websocket/v1")) // upbit socket server
             setApplicationContext(context)
             setConverterType(ConverterType.Gson)
         }.create()
