@@ -22,5 +22,4 @@ class WebSocketEventProcessor: EventProcessor<WebSocketEvent> {
         channel.trySendBlocking(event)
     }
 
-    //todo : dispose channel close event
 }

@@ -5,8 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.jeremy.thunder.socket.SocketService
 import com.jeremy.thunder.socket.model.BinanceRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -43,8 +41,5 @@ class FavoriteViewModel @Inject constructor(
     }
 
     fun observeSpecificTicker() {
-        service.observeTicker().onEach {
-
-        }.launchIn(viewModelScope)
     }
 }

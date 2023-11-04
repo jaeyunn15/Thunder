@@ -1,6 +1,7 @@
 package com.jeremy.thunder.event
 
 import com.jeremy.thunder.event.converter.Converter
+import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.Type
 
 /**
@@ -12,14 +13,14 @@ class SocketEventKeyStore {
 
     private val cache = mutableMapOf<EventKey, EventMapper<*>>()
 
-    fun findEventMapper(returnType: Type, annotations: Array<Annotation>, converter: Converter<*>): EventMapper<*> {
+    fun findEventMapper(returnType: Type, annotations: Array<Annotation>, converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
         val key = EventKey(returnType, annotations)
 
         if (cache.containsKey(key)) {
             return cache[key]!!
         }
 
-        val eventMapper = EventMapper.Factory().create(converter)
+        val eventMapper = EventMapper.Factory().create(converter, coroutineScope)
 
         cache[key] = eventMapper
 

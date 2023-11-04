@@ -1,44 +1,49 @@
 package com.jeremy.thunder.event
 
 import com.jeremy.thunder.event.converter.Converter
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 
 /**
  * [EventMapper] - Convert WebSocketEvent to Generic type data.
-* */
+ * */
 
 class EventMapper<T> constructor(
-    private val converter: Converter<T>
+    private val converter: Converter<T>,
+    coroutineScope: CoroutineScope
 ) {
+    private val _eventMappingChannel = MutableSharedFlow<WebSocketEvent>(
+        replay = 1,
+        extraBufferCapacity = 100,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
-    fun mapEvent(flow: Flow<WebSocketEvent>): Flow<T?> = flow.filter {
-        it is WebSocketEvent.OnMessageReceived
-    }.map {
-        (it as WebSocketEvent.OnMessageReceived).data
-    }.map {
-        try {
-            val result = converter.convert(it)
-            result
-        } catch (e: Exception) {
-            null
-        }
+    private val mapToResultChannel = MutableSharedFlow<T>(
+        replay = 1,
+        extraBufferCapacity = 100,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+
+    init {
+        _eventMappingChannel.filter { it is WebSocketEvent.OnMessageReceived }
+            .map { (it as WebSocketEvent.OnMessageReceived).data }.map(converter::convert)
+            .map(mapToResultChannel::tryEmit).launchIn(coroutineScope)
     }
 
-    fun mapEvent(event: WebSocketEvent): T? = if (event is WebSocketEvent.OnMessageReceived) {
-        try {
-            converter.convert(event.data)
-        } catch (e: Exception) {
-            null
-        }
-    } else {
-        null
+    fun mapEventToGeneric(event: WebSocketEvent) {
+        _eventMappingChannel.tryEmit(event)
     }
+
+    fun mapEventFlow(): Flow<T> = mapToResultChannel
 
     class Factory {
-        fun create(converter: Converter<*>): EventMapper<*> {
-            return EventMapper(converter)
+        fun create(converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
+            return EventMapper(converter, coroutineScope)
         }
     }
 }

@@ -2,7 +2,6 @@ package com.jeremy.thunder.internal
 
 import com.google.gson.Gson
 import com.jeremy.thunder.event.SocketEventKeyStore
-import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.converter.Converter
 import com.jeremy.thunder.event.converter.ConverterType
 import com.jeremy.thunder.event.converter.GsonConvertAdapter
@@ -13,7 +12,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
@@ -31,22 +31,6 @@ class ServiceExecutor internal constructor(
     private val scope: CoroutineScope
 ) {
 
-    fun executeEvent(method: Method, args: Array<out Any>): Any {
-        require(method.genericReturnType != Flow::class.java) { "return type must flow" }
-        return when (method.genericReturnType.getAboutRawType()) {
-            Flow::class.java -> {
-                val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
-                require(returnType !is WebSocketEvent) { "Event annotation must require return type as WebSocketEvent." }
-                thunderProvider.observeEvent()
-                    .filterNotNull()
-                    .createPipeline()
-                    .receiveFlow()
-            }
-
-            else -> require(false) { "Wrapper Type must be Flow." }
-        }
-    }
-
     fun executeReceive(method: Method, args: Array<out Any>): Any {
         require(method.genericReturnType != Flow::class.java) { "return type must flow" }
         return when (method.genericReturnType.getAboutRawType()) {
@@ -54,15 +38,10 @@ class ServiceExecutor internal constructor(
                 method.requireParameterTypes { "Receive method must have zero parameter: $method" }
                 method.requireReturnTypeIsOneOf(ParameterizedType::class.java) { "Receive method must return ParameterizedType: $method" }
                 val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
-                //val converter = ConvertAdapter.Factory().create(returnType)
-                //val converter = SerializeConvertAdapter.Factory().create(returnType)
                 val converter = checkConverterType(converterType, returnType)
-                val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter)
-                thunderProvider.observeEvent()
-                    .map(eventMapper::mapEvent)
-                    .filterNotNull()
-                    .createPipeline()
-                    .receiveFlow()
+                val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter, scope)
+                thunderProvider.observeEvent().onEach { eventMapper.mapEventToGeneric(it) }.launchIn(scope)
+                eventMapper.mapEventFlow().filterNotNull().createPipeline().receiveFlow()
             }
 
             else -> require(false) { "Wrapper Type must be Flow." }
