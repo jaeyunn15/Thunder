@@ -60,9 +60,6 @@ interface SocketService {
 
     @Receive
     fun response(): Flow<TickerResponse>
-
-    @Event
-    fun receiveEvent(): Flow<WebSocketEvent>
 }
 ~~~
 
@@ -73,6 +70,7 @@ Second, we need to create a Thunder instance, which requires an ApplicationConte
 val thunderInstance = Thunder.Builder()
     .webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
     .setApplicationContext(context)
+    .setConverterType(ConverterType.Gson)
     .build()
 
 thunderInstance.create<SocketService>()
@@ -91,6 +89,10 @@ Alternatively, you can use a dependency injection library like Hilt to create th
             .setLevel(HttpLoggingInterceptor.Level.BODY)
         return OkHttpClient.Builder()
             .addInterceptor(httpLoggingInterceptor)
+            .pingInterval(
+                10,
+                TimeUnit.SECONDS
+            ) // If there are no events for a minute, we need to put in some code for ping pong to output a socket connection error from okhttp.
             .build()
     }
 
