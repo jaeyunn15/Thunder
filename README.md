@@ -1,16 +1,19 @@
 # Thunder [![](https://jitpack.io/v/jaeyunn15/Thunder.svg)](https://jitpack.io/#jaeyunn15/Thunder)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
-The overall design of this library is very similar to Scarlet.     
 Currently, support only for Coroutine Flow.     
+
+---
+## Production Story
+- [Thunder: WebSocket have come through the clouds.](https://medium.com/proandroiddev/%EF%B8%8Fthunder-websocket-have-come-through-the-clouds-4db1a9b31ffa)
 
 ---
 ## Feature
 - WebSocket connection using OkHttp3.
 - Regardless of the state of your app, if it's alive, it will automatically manage to stay connected. 
-- Provide retry and reconnect handling based on the application's network and socket state. (I called it valve cache, recovery cache)
-- Provide the ability to automatically recover requests via the last request cache.
-- Provides two converter adapters: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
+- Provide **retry and reconnect** handling based on the application's network and socket state.     (I called it valve cache, recovery cache)
+- Provide the ability to **automatically recover requests** via the last request cache.
+- Provides **two converter adapters**: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
 - (TBD) Provides a websocket connection based on the Stomp Message Protocol.
 
 ---
