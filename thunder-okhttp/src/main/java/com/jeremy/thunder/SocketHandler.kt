@@ -1,5 +1,6 @@
 package com.jeremy.thunder
 
+import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -12,11 +13,7 @@ class SocketHandler : WebSocket {
         this.socket = socket
     }
 
-    override fun open() {
-
-    }
-
-    override fun events(): Flow<com.jeremy.thunder.event.WebSocketEvent> {
+    override fun open(): Flow<WebSocketEvent> {
         return emptyFlow()
     }
 
@@ -24,9 +21,8 @@ class SocketHandler : WebSocket {
         return socket?.send(data) ?: false
     }
 
-    override fun close(code: Int, reason: String) {
-        socket?.close(code, reason)
-        socket = null
+    override fun close(code: Int, reason: String): Boolean {
+        return socket?.close(code, reason).apply { socket = null } ?: false
     }
 
     override fun cancel() {

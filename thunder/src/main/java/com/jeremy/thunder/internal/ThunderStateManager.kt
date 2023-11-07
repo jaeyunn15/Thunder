@@ -177,10 +177,9 @@ class ThunderStateManager private constructor(
         if (socket == null) {
             socket = webSocketCore.create()
             socket?.let { webSocket ->
-                webSocket.open()
-                thunderLog("Thunder open connection work.")
                 if (::connectionJob.isInitialized) connectionJob.cancel()
-                connectionJob = webSocket.events().onEach { _events.tryEmit(it) }.launchIn(innerScope)
+                connectionJob = webSocket.open().onEach { _events.tryEmit(it) }.launchIn(innerScope)
+                thunderLog("Thunder open connection work.")
             }
         }
     }
@@ -189,9 +188,8 @@ class ThunderStateManager private constructor(
         socket?.let {
             thunderLog("Thunder close connection work.")
             _socketState.update { ThunderState.ERROR() }
-            it.close(1000, "shutdown")
+            if (it.close(1000, "shutdown")) socket = null
             if (::connectionJob.isInitialized) connectionJob.cancel()
-            socket = null
         }
     }
 

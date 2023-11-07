@@ -5,16 +5,14 @@ import kotlinx.coroutines.flow.Flow
 
 interface WebSocket {
 
-    //websocket 오픈 시
-    fun open()
-
-    fun events(): Flow<WebSocketEvent>
+    //websocket open
+    fun open(): Flow<WebSocketEvent>
 
     //Websocket send message
     fun send(data: String): Boolean
 
     //Websocket Connection close - code & reason
-    fun close(code: Int, reason: String)
+    fun close(code: Int, reason: String): Boolean
 
     fun cancel()
 

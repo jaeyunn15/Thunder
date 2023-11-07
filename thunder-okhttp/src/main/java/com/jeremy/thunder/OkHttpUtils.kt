@@ -1,15 +1,12 @@
 package com.jeremy.thunder
 
 import com.jeremy.thunder.ws.WebSocket
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
 fun OkHttpClient.makeWebSocketCore(url: String): WebSocket.Factory {
     return OkHttpWebSocket.Factory(
         provider = ConnectionProvider(this, url),
-        scope = CoroutineScope(SupervisorJob())
     )
 }
 

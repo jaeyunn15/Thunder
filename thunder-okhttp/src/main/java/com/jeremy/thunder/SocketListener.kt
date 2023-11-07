@@ -20,7 +20,7 @@ class SocketListener : WebSocketListener(), EventCollector {
     )
 
     override fun collectEvent(): Flow<WebSocketEvent> {
-        return _eventFlow.asSharedFlow()
+        return _eventFlow
     }
 
     override fun onOpen(webSocket: WebSocket, response: Response) {
