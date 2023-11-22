@@ -43,7 +43,7 @@ internal object SocketModule {
 //            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream")) // binance socket server
             webSocketCore(okHttpClient.makeWebSocketCore("wss://api.upbit.com/websocket/v1")) // upbit socket server
             setApplicationContext(context)
-            setConverterType(ConverterType.Gson)
+            setConverterType(ConverterType.Serialization)
         }.create()
     }
 }

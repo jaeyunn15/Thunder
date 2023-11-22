@@ -1,10 +1,10 @@
 package com.jeremy.thunder
 
+import android.util.Log
 import com.jeremy.thunder.event.WebSocketEvent
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener

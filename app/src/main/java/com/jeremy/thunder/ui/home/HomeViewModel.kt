@@ -40,7 +40,6 @@ class HomeViewModel @Inject constructor(
             )
         )
 
-
         // binance socket request subscribe
 //        service.request(
 //            request = BinanceRequest(
@@ -63,9 +62,5 @@ class HomeViewModel @Inject constructor(
         service.collectUpbitTicker().onEach {
 
         }.launchIn(viewModelScope)
-
-//        service.observeAllMarketTickers().onEach { response ->
-//            _allMarketTickerFlow.update { response.data.sortedBy { it.c } }
-//        }.launchIn(viewModelScope)
     }
 }
