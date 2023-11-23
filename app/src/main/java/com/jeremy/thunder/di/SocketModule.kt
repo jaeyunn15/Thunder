@@ -46,4 +46,19 @@ internal object SocketModule {
             setConverterType(ConverterType.Serialization)
         }.create()
     }
+
+//    @Provides
+//    @Singleton
+//    fun provideStompService(
+//        okHttpClient: OkHttpClient,
+//        @ApplicationContext context: Context
+//    ): StompService {
+//        return thunder {
+//            webSocketCore(okHttpClient.makeWebSocketCore("")) //required
+//            setApplicationContext(context) //required
+//            setConverterType(ConverterType.Serialization)
+//            setStateManager(StompStateManager.Factory()) // optional but if you need stomp this is required
+//            setEventMapper(StompEventMapper.Factory()) // optional but if you need stomp this is required
+//        }.create()
+//    }
 }

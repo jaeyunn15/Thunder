@@ -1,5 +1,6 @@
 package com.jeremy.thunder.ui.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jeremy.thunder.socket.SocketService
@@ -18,7 +19,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val service: SocketService
+    private val service: SocketService,
 ) : ViewModel() {
 
     private val _allMarketTickerFlow = MutableStateFlow<List<AllMarketTickerResponseItem>>(emptyList())
@@ -27,11 +28,12 @@ class HomeViewModel @Inject constructor(
     private val _socketEventFlow = MutableStateFlow<String>("")
     val socketEventFlow: Flow<String> get() = _socketEventFlow
 
+    private val ticket = UUID.randomUUID().toString()
     fun requestAllMarketTicker() = viewModelScope.launch{
         // upbit socket request
         service.requestUpbit(
             listOf(
-                RequestTicketField(ticket = UUID.randomUUID().toString()),
+                RequestTicketField(ticket = ticket),
                 RequestTypeField(
                     type = "ticker",
                     codes = listOf("KRW-BTC","KRW-ETH","KRW-XRP","KRW-DOGE")
@@ -60,7 +62,7 @@ class HomeViewModel @Inject constructor(
 
     fun observeAllMarket() {
         service.collectUpbitTicker().onEach {
-
+            Log.d("Thunder","$it")
         }.launchIn(viewModelScope)
     }
 }
