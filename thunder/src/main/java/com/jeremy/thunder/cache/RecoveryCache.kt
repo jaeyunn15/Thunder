@@ -1,5 +1,7 @@
 package com.jeremy.thunder.cache
 
+import com.jeremy.thunder.state.ThunderRequest
+
 
 /**
  * A controller that handles caching for requests from interfaces with the @Send annotation.
@@ -8,13 +10,13 @@ package com.jeremy.thunder.cache
 
 class RecoveryCache {
 
-    private var latestRequest: String? = null
+    private var latestRequest: ThunderRequest? = null
 
-    fun set(value: String) {
+    fun set(value: ThunderRequest) {
         latestRequest = value
     }
 
-    fun get(): String? {
+    fun get(): ThunderRequest? {
         return latestRequest
     }
 

@@ -1,5 +1,6 @@
 package com.jeremy.thunder.cache
 
+import com.jeremy.thunder.state.ThunderRequest
 import com.jeremy.thunder.state.ThunderState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -23,20 +24,18 @@ class ValveCache(
 ) {
     private val isEmissiable = MutableStateFlow<Boolean>(true)
 
-    private val innerQueue = ConcurrentLinkedQueue<Pair<String,String>>()
+    private val innerQueue = ConcurrentLinkedQueue<ThunderRequest>()
 
-    private fun cacheFlow(): Flow<List<String>> {
-        return flow {
-            while (currentCoroutineContext().isActive) {
-                if (isEmissiable.value && innerQueue.isNotEmpty()) {
-                    val emitCacheList = mutableListOf<String>()
-                    while (innerQueue.isNotEmpty()) {
-                        innerQueue.poll()?.let { emitCacheList.add(it.second) }
-                    }
-                    emit(emitCacheList)
+    private fun cacheFlow(): Flow<List<ThunderRequest>> = flow {
+        while (currentCoroutineContext().isActive) {
+            if (isEmissiable.value && innerQueue.isNotEmpty()) {
+                val emitCacheList = mutableListOf<ThunderRequest>()
+                while (innerQueue.isNotEmpty()) {
+                    innerQueue.poll()?.let { emitCacheList.add(it) }
                 }
-                delay(300)
+                emit(emitCacheList)
             }
+            delay(300)
         }
     }
 
@@ -44,11 +43,11 @@ class ValveCache(
         isEmissiable.update { state == ThunderState.CONNECTED }
     }
 
-    fun requestToValve(request: Pair<String, String>) {
+    fun requestToValve(request: ThunderRequest) {
         innerQueue.add(request)
     }
 
-    fun emissionOfValveFlow(): Flow<List<String>> = cacheFlow()
+    fun emissionOfValveFlow(): Flow<List<ThunderRequest>> = cacheFlow()
 
     class Factory(
         private val scope: CoroutineScope
