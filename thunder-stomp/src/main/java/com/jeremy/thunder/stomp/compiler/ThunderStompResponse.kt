@@ -1,6 +1,6 @@
 package com.jeremy.thunder.stomp.compiler
 
-sealed interface ThunderResponse {
+sealed interface ThunderStompResponse {
     val command: ResponseCommandType
 }
 
@@ -11,7 +11,7 @@ enum class ResponseCommandType {
     UNIT
 }
 
-object UnitResponse: ThunderResponse {
+object UnitResponse: ThunderStompResponse {
     override val command: ResponseCommandType
         get() = ResponseCommandType.UNIT
 }
@@ -19,21 +19,21 @@ object UnitResponse: ThunderResponse {
 data class MessageResponse(
     val header: HashMap<String, String>,
     val payload: String?
-): ThunderResponse {
+): ThunderStompResponse {
     override val command: ResponseCommandType
         get() = ResponseCommandType.MESSAGE
 }
 
 data class ReceiptResponse(
     val header: HashMap<String, String>,
-): ThunderResponse {
+): ThunderStompResponse {
     override val command: ResponseCommandType
         get() = ResponseCommandType.RECEIPT
 }
 
 data class ErrorResponse(
     val payload: String?
-): ThunderResponse {
+): ThunderStompResponse {
     override val command: ResponseCommandType
         get() = ResponseCommandType.ERROR
 }

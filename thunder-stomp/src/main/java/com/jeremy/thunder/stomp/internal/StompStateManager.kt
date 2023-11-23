@@ -18,7 +18,7 @@ import com.jeremy.thunder.state.StompRequest
 import com.jeremy.thunder.state.ThunderError
 import com.jeremy.thunder.state.ThunderState
 import com.jeremy.thunder.stomp.compiler.MessageCompiler.compileMessage
-import com.jeremy.thunder.stomp.compiler.ThunderRequest
+import com.jeremy.thunder.stomp.compiler.ThunderStompRequest
 import com.jeremy.thunder.stomp.model.ACK
 import com.jeremy.thunder.stomp.model.Command
 import com.jeremy.thunder.stomp.model.DEFAULT_ACK
@@ -217,7 +217,7 @@ class StompStateManager private constructor(
                 manageHeaderUuid(topic, uuid)
                 it.send(
                     compileMessage(
-                        ThunderRequest.Builder()
+                        ThunderStompRequest.Builder()
                             .command(Command.SEND)
                             .header(
                                 ID to uuid,
@@ -243,7 +243,7 @@ class StompStateManager private constructor(
                     if (it is WebSocketEvent.OnConnectionOpen) {
                         webSocket.send(
                             compileMessage(
-                                ThunderRequest.Builder()
+                                ThunderStompRequest.Builder()
                                     .command(Command.CONNECT)
                                     .header(VERSION to SUPPORTED_VERSIONS)
                                     .build()
@@ -278,7 +278,7 @@ class StompStateManager private constructor(
                 manageHeaderUuid(topic, uuid)
                 it.send(
                     compileMessage(
-                        ThunderRequest.Builder()
+                        ThunderStompRequest.Builder()
                             .command(Command.SUBSCRIBE)
                             .header(
                                 ID to uuid,
@@ -299,7 +299,7 @@ class StompStateManager private constructor(
                 val uuid = getHeaderUuid(topic)
                 it.send(
                     compileMessage(
-                        ThunderRequest.Builder()
+                        ThunderStompRequest.Builder()
                             .command(Command.SUBSCRIBE)
                             .header(
                                 ID to uuid,

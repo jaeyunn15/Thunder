@@ -4,7 +4,7 @@ import com.jeremy.thunder.stomp.model.Command
 import com.jeremy.thunder.stomp.model.Header
 import com.jeremy.thunder.stomp.model.HeaderMap
 
-class ThunderRequest private constructor(
+class ThunderStompRequest private constructor(
     val command: Command,
     val header: Header,
     val payload: String?
@@ -25,11 +25,11 @@ class ThunderRequest private constructor(
 
         fun payload(value: String) = apply { payload = value }
 
-        fun build(): ThunderRequest {
+        fun build(): ThunderStompRequest {
             requireNotNull(command) { "Command must be set" }
             requireNotNull(header) { "Header must be set" }
 
-            return ThunderRequest(command!!, header!!, payload)
+            return ThunderStompRequest(command!!, header!!, payload)
         }
     }
 }

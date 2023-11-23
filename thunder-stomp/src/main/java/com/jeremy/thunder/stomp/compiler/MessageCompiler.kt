@@ -8,7 +8,7 @@ object MessageCompiler {
     private val PATTERN_HEADER = Pattern.compile("([^:\\s]+)\\s*:\\s*([^:\\s]+)")
     const val TERMINATE_MESSAGE_SYMBOL = "\u0000"
 
-    fun compileMessage(message: ThunderRequest): String = buildString {
+    fun compileMessage(message: ThunderStompRequest): String = buildString {
         append("${message.command}\n")
         append(message.header.extract())
         append("\n")
@@ -16,7 +16,7 @@ object MessageCompiler {
         append(TERMINATE_MESSAGE_SYMBOL)
     }
 
-    fun parseMessage(data: String?): ThunderResponse {
+    fun parseMessage(data: String?): ThunderStompResponse {
         if (data.isNullOrBlank()) return UnitResponse
 
         return runCatching {
