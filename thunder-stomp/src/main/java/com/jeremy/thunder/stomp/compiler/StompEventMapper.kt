@@ -43,7 +43,7 @@ class StompEventMapper<T> constructor(
             .launchIn(coroutineScope)
     }
 
-    private fun handleMessage(response: ThunderResponse): T? {
+    private fun handleMessage(response: ThunderStompResponse): T? {
         return when (response.command) {
             ResponseCommandType.MESSAGE -> {
                 val message = response as MessageResponse
