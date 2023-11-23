@@ -1,6 +1,7 @@
 package com.jeremy.thunder.internal
 
 import com.google.gson.Gson
+import com.jeremy.thunder.event.IMapper
 import com.jeremy.thunder.event.SocketEventKeyStore
 import com.jeremy.thunder.event.converter.Converter
 import com.jeremy.thunder.event.converter.ConverterType
@@ -8,6 +9,9 @@ import com.jeremy.thunder.event.converter.GsonConvertAdapter
 import com.jeremy.thunder.event.converter.SerializeConvertAdapter
 import com.jeremy.thunder.getAboutRawType
 import com.jeremy.thunder.getParameterUpperBound
+import com.jeremy.thunder.state.StompRequest
+import com.jeremy.thunder.state.WebSocketRequest
+import com.jeremy.thunder.ws.Stomp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -23,11 +27,13 @@ import java.lang.reflect.Type
  * create logic by annotation
  * @Receive - create pipeline flow for observer
  * @Send - create send data
+ * @Subscribe - create subscribe for stomp
  * */
 
 class ServiceExecutor internal constructor(
     private val thunderProvider: ThunderProvider,
     private val converterType: ConverterType,
+    private val iMapperFactory: IMapper.Factory,
     private val scope: CoroutineScope
 ) {
 
@@ -39,7 +45,7 @@ class ServiceExecutor internal constructor(
                 method.requireReturnTypeIsOneOf(ParameterizedType::class.java) { "Receive method must return ParameterizedType: $method" }
                 val returnType = (method.genericReturnType as ParameterizedType).getParameterUpperBound(0)
                 val converter = checkConverterType(converterType, returnType)
-                val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter, scope)
+                val eventMapper = SocketEventKeyStore().findEventMapper(returnType, method.annotations, converter, scope, iMapperFactory)
                 thunderProvider.observeEvent().onEach { eventMapper.mapEventToGeneric(it) }.launchIn(scope)
                 eventMapper.mapEventFlow().filterNotNull().createPipeline().receiveFlow()
             }
@@ -59,20 +65,58 @@ class ServiceExecutor internal constructor(
 
     fun executeSend(method: Method, args: Array<out Any>) {
         require(args.isNotEmpty()) { "@Send method require at least 1 arguments for execute service" }
+
+        val secondAnnotation = method.annotations.getOrNull(1)
+
+        /**
+         * Execute for stomp send frame.
+         * A minimum of 2 arguments is required. (Destination, Payload)
+         * */
+        if (secondAnnotation != null && secondAnnotation is Stomp) {
+            scope.launch(Dispatchers.Default) {
+                require(args[0] is String) { "@Send with @Stomp annotation method require String type of first field. (destination) " }
+                require(args[1] is String) { "@Send with @Stomp annotation method require String type of second field. (payload) " }
+                val destination = args[0] as String //destination
+                val payload = args[1] as String //payload
+                thunderProvider.send(
+                    StompRequest(
+                        command = "send",
+                        destination = destination,
+                        payload = payload
+                    )
+                )
+            }
+        } else {
+            scope.launch(Dispatchers.Default) {
+                val request = Gson().toJson(args[0])
+                thunderProvider.send(WebSocketRequest(request))
+            }
+        }
+    }
+
+    fun executeSubscribe(method: Method, args: Array<out Any>) {
+        require(args.isNotEmpty()) { "@Subscribe method require at least 2 arguments for execute service" }
         scope.launch(Dispatchers.Default) {
-            val request = Gson().toJson(args[0])
-            thunderProvider.send(request, request)
+            val subscribeFlag = args[0] as Boolean
+            val subscribeDestination = args[1] as String
+            thunderProvider.subscribe(
+                StompRequest(
+                    command = if (subscribeFlag) "subscribe" else "unsubscribe",
+                    destination = subscribeDestination
+                )
+            )
         }
     }
 
     class Factory(
         private val thunderProvider: ThunderProvider,
         private val converterType: ConverterType,
+        private val iMapperFactory: IMapper.Factory,
         private val scope: CoroutineScope,
     ) {
 
         fun create(): ServiceExecutor {
-            return ServiceExecutor(thunderProvider, converterType, scope)
+            return ServiceExecutor(thunderProvider, converterType, iMapperFactory, scope)
         }
     }
 
@@ -96,6 +140,5 @@ class ServiceExecutor internal constructor(
                 types.any { it === genericReturnType || it.isInstance(genericReturnType) },
                 lazyMessage
             )
-
     }
 }

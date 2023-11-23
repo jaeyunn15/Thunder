@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.map
 class EventMapper<T> constructor(
     private val converter: Converter<T>,
     coroutineScope: CoroutineScope
-) {
+) : IMapper<T> {
     private val _eventMappingChannel = MutableSharedFlow<WebSocketEvent>(
         replay = 1,
         extraBufferCapacity = 100,
@@ -30,20 +30,34 @@ class EventMapper<T> constructor(
     )
 
     init {
-        _eventMappingChannel.filter { it is WebSocketEvent.OnMessageReceived }
-            .map { (it as WebSocketEvent.OnMessageReceived).data }.map(converter::convert)
-            .map(mapToResultChannel::tryEmit).launchIn(coroutineScope)
+        _eventMappingChannel
+            .filter { it is WebSocketEvent.OnMessageReceived }
+            .map { (it as WebSocketEvent.OnMessageReceived).data}
+            .map(converter::convert)
+            .map(mapToResultChannel::tryEmit)
+            .launchIn(coroutineScope)
     }
 
-    fun mapEventToGeneric(event: WebSocketEvent) {
+    override fun mapEventToGeneric(event: WebSocketEvent) {
         _eventMappingChannel.tryEmit(event)
     }
 
-    fun mapEventFlow(): Flow<T> = mapToResultChannel
+    override fun mapEventFlow(): Flow<T> = mapToResultChannel
 
-    class Factory {
-        fun create(converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
+    class Factory: IMapper.Factory {
+        override fun create(converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
             return EventMapper(converter, coroutineScope)
         }
+    }
+}
+
+
+interface IMapper<T> {
+    fun mapEventToGeneric(event: WebSocketEvent)
+
+    fun mapEventFlow(): Flow<T>
+
+    interface Factory {
+        fun create(converter: Converter<*>, coroutineScope: CoroutineScope): IMapper<*>
     }
 }

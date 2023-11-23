@@ -30,7 +30,4 @@ class SocketHandler : WebSocket {
         socket = null
     }
 
-    override fun error(t: String) {
-        // socket already error
-    }
 }

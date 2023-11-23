@@ -16,9 +16,6 @@ interface WebSocket {
 
     fun cancel()
 
-    //Websocket Connection failure
-    fun error(t: String)
-
     interface Factory{
         fun create(): WebSocket
     }

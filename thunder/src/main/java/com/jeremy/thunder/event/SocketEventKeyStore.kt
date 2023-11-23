@@ -11,16 +11,22 @@ import java.lang.reflect.Type
 
 class SocketEventKeyStore {
 
-    private val cache = mutableMapOf<EventKey, EventMapper<*>>()
+    private val cache = mutableMapOf<EventKey, IMapper<*>>()
 
-    fun findEventMapper(returnType: Type, annotations: Array<Annotation>, converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
+    fun findEventMapper(
+        returnType: Type,
+        annotations: Array<Annotation>,
+        converter: Converter<*>,
+        coroutineScope: CoroutineScope,
+        eventFactory: IMapper.Factory
+    ): IMapper<*> {
         val key = EventKey(returnType, annotations)
 
         if (cache.containsKey(key)) {
             return cache[key]!!
         }
 
-        val eventMapper = EventMapper.Factory().create(converter, coroutineScope)
+        val eventMapper = eventFactory.create(converter, coroutineScope)
 
         cache[key] = eventMapper
 

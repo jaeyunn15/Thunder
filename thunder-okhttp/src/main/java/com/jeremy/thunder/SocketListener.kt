@@ -1,6 +1,5 @@
 package com.jeremy.thunder
 
-import android.util.Log
 import com.jeremy.thunder.event.WebSocketEvent
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow

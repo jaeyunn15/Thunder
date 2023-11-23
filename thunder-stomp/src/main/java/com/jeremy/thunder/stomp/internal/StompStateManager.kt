@@ -1,11 +1,11 @@
-package com.jeremy.thunder.internal
+package com.jeremy.thunder.stomp.internal
 
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.cache.RecoveryCache
 import com.jeremy.thunder.cache.ValveCache
 import com.jeremy.thunder.connection.AppConnectionListener
-import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.internal.StateManager
 import com.jeremy.thunder.network.NetworkConnectivityService
 import com.jeremy.thunder.state.Background
 import com.jeremy.thunder.state.Foreground
@@ -13,16 +13,25 @@ import com.jeremy.thunder.state.Initialize
 import com.jeremy.thunder.state.ManagerState
 import com.jeremy.thunder.state.NetworkState
 import com.jeremy.thunder.state.ShutDown
+import com.jeremy.thunder.state.StompManager
+import com.jeremy.thunder.state.StompRequest
 import com.jeremy.thunder.state.ThunderError
-import com.jeremy.thunder.state.ThunderManager
-import com.jeremy.thunder.state.ThunderRequest
 import com.jeremy.thunder.state.ThunderState
-import com.jeremy.thunder.state.WebSocketRequest
-import com.jeremy.thunder.thunderLog
+import com.jeremy.thunder.stomp.compiler.MessageCompiler.compileMessage
+import com.jeremy.thunder.stomp.compiler.ThunderRequest
+import com.jeremy.thunder.stomp.model.ACK
+import com.jeremy.thunder.stomp.model.Command
+import com.jeremy.thunder.stomp.model.DEFAULT_ACK
+import com.jeremy.thunder.stomp.model.DESTINATION
+import com.jeremy.thunder.stomp.model.ID
+import com.jeremy.thunder.stomp.model.SUPPORTED_VERSIONS
+import com.jeremy.thunder.stomp.model.VERSION
 import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,14 +41,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import java.util.LinkedList
+import java.util.Queue
+import java.util.UUID
 
-/**
- * Manage ThunderState as SocketState using NetworkState
- *
-* */
-
-class ThunderStateManager private constructor(
+class StompStateManager private constructor(
     connectionListener: AppConnectionListener,
     networkState: NetworkConnectivityService,
     private val recoveryCache: RecoveryCache,
@@ -48,7 +56,7 @@ class ThunderStateManager private constructor(
     private val scope: CoroutineScope
 ): StateManager {
     private val innerScope = scope + CoroutineExceptionHandler { _, throwable ->
-        thunderLog("[ThunderStateManager] = ${throwable.message}")
+        //thunderLog("[ThunderStateManager] = ${throwable.message}")
     }
 
     private var socket: WebSocket? = null
@@ -65,14 +73,17 @@ class ThunderStateManager private constructor(
 
     private val _retryNeedFlag = MutableStateFlow<Boolean>(false)
 
+    private val _socketHeaderUUID: HashMap<String, Queue<String>> = hashMapOf()
+
     fun thunderStateAsFlow() = _socketState.asStateFlow()
 
     fun thunderState() = _socketState.value
     override fun getStateOfType(): ManagerState {
-        return ThunderManager
+        return StompManager
     }
 
     override fun collectWebSocketEvent() = _events.asSharedFlow()
+
 
     init {
         /**
@@ -144,16 +155,17 @@ class ThunderStateManager private constructor(
 
         combine(
             _socketState,
-            valveCache.emissionOfValveFlow()
+            valveCache.
+            emissionOfValveFlow()
         ) { currentSocketState, request ->
             when (currentSocketState) {
                 ThunderState.CONNECTED -> {
                     if (isReSubscription && recoveryCache.hasCache()) {
-                        recoveryCache.get()?.let { requestSendMessage(it) }
+                        recoveryCache.get()?.let { requestExecute(it) }
                         recoveryCache.clear()
                         isReSubscription = false
                     } else {
-                        request.forEach(::requestSendMessage)
+                        request.forEach(::requestExecute)
                     }
                 }
 
@@ -163,46 +175,158 @@ class ThunderStateManager private constructor(
     }
 
     private suspend fun retryConnection() {
-        thunderLog("Thunder retry connection work.")
         closeConnection()
         delay(RETRY_CONNECTION_GAP)
         openConnection()
         _retryNeedFlag.update { false }
     }
 
+    private fun requestExecute(message: com.jeremy.thunder.state.ThunderRequest) = innerScope.launch(Dispatchers.IO) {
+        val request = message as StompRequest
+        when (request.command) {
+            "subscribe" -> {
+                subscribe(
+                    topic = request.destination,
+                    payload = request.payload.orEmpty()
+                )
+            }
+            "unsubscribe" -> {
+                unsubscribe(
+                    topic = request.destination
+                )
+            }
+            "send" -> {
+                sendMessage(
+                    topic = request.destination,
+                    payload = request.payload.orEmpty()
+                )
+            }
+            else -> {
+                // not implement yet
+            }
+        }
+    }
+
     /**
      * After sending data using the socket, we store it in the recovery cache only after receiving a completion for the event.
-    * */
-    private fun requestSendMessage(message: ThunderRequest) = socket?.let{
-        val msg = (message as WebSocketRequest).msg
-        if (it.send(msg)) {
-            recoveryCache.set(message)
+     * */
+    private fun sendMessage(topic: String, payload: String) {
+        socket?.let {
+            runCatching {
+                val uuid = UUID.randomUUID().toString()
+                manageHeaderUuid(topic, uuid)
+                it.send(
+                    compileMessage(
+                        ThunderRequest.Builder()
+                            .command(Command.SEND)
+                            .header(
+                                ID to uuid,
+                                DESTINATION to topic,
+                                ACK to DEFAULT_ACK,
+                            )
+                            .payload(payload)
+                            .build()
+                    )
+                )
+            }
         }
     }
 
     private lateinit var connectionJob: Job
+
     private fun openConnection() = synchronized(this) {
         if (socket == null) {
             socket = webSocketCore.create()
             socket?.let { webSocket ->
                 if (::connectionJob.isInitialized) connectionJob.cancel()
-                connectionJob = webSocket.open().onEach { _events.tryEmit(it) }.launchIn(innerScope)
-                thunderLog("Thunder open connection work.")
+                connectionJob = webSocket.open().onEach {
+                    if (it is WebSocketEvent.OnConnectionOpen) {
+                        webSocket.send(
+                            compileMessage(
+                                ThunderRequest.Builder()
+                                    .command(Command.CONNECT)
+                                    .header(VERSION to SUPPORTED_VERSIONS)
+                                    .build()
+                            )
+                        )
+                    }
+                    _events.tryEmit(it)
+                }.launchIn(innerScope)
             }
         }
     }
 
     private fun closeConnection() = synchronized(this) {
         socket?.let {
-            thunderLog("Thunder close connection work.")
             _socketState.update { ThunderState.ERROR() }
             if (it.close(1000, "shutdown")) socket = null
+            _socketHeaderUUID.clear()
             if (::connectionJob.isInitialized) connectionJob.cancel()
         }
     }
 
-    override fun send(message: ThunderRequest) {
-        valveCache.requestToValve(message)
+    override fun send(message: com.jeremy.thunder.state.ThunderRequest) {
+        val request = message as StompRequest
+        valveCache.requestToValve(request)
+        recoveryCache.set(request)
+    }
+
+    private fun subscribe(topic: String, payload: String) {
+        socket?.let {
+            runCatching {
+                val uuid = UUID.randomUUID().toString()
+                manageHeaderUuid(topic, uuid)
+                it.send(
+                    compileMessage(
+                        ThunderRequest.Builder()
+                            .command(Command.SUBSCRIBE)
+                            .header(
+                                ID to uuid,
+                                DESTINATION to topic,
+                                ACK to DEFAULT_ACK,
+                            )
+                            .payload(payload)
+                            .build()
+                    )
+                )
+            }
+        }
+    }
+
+    private  fun unsubscribe(topic: String) {
+        socket?.let {
+            runCatching {
+                val uuid = getHeaderUuid(topic)
+                it.send(
+                    compileMessage(
+                        ThunderRequest.Builder()
+                            .command(Command.SUBSCRIBE)
+                            .header(
+                                ID to uuid,
+                                DESTINATION to topic,
+                                ACK to DEFAULT_ACK,
+                            )
+                            .build()
+                    )
+                )
+            }
+        }
+    }
+
+    private fun manageHeaderUuid(topic: String, uuid: String) {
+        if (_socketHeaderUUID.containsKey(topic) && !_socketHeaderUUID[topic].isNullOrEmpty()) {
+            _socketHeaderUUID[topic]?.offer(uuid)
+        } else {
+            _socketHeaderUUID[topic] = LinkedList<String>().apply { offer(uuid) }
+        }
+    }
+
+    private fun getHeaderUuid(topic: String): String {
+        return if (_socketHeaderUUID.containsKey(topic) && !_socketHeaderUUID[topic].isNullOrEmpty()) {
+            _socketHeaderUUID[topic]?.poll() ?: ""
+        } else {
+            ""
+        }
     }
 
     class Factory: StateManager.Factory {
@@ -212,13 +336,13 @@ class ThunderStateManager private constructor(
             cacheController: CacheController,
             webSocketCore: WebSocket.Factory
         ): StateManager {
-            return ThunderStateManager(
+            return StompStateManager(
                 connectionListener = connectionListener,
                 networkState = networkStatus,
                 recoveryCache = cacheController.rCache,
                 valveCache = cacheController.vCache,
                 webSocketCore = webSocketCore,
-                scope = scope
+                scope = CoroutineScope(SupervisorJob())
             )
         }
     }

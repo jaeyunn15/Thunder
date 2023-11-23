@@ -5,17 +5,21 @@ import android.content.Context
 import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.connection.AppConnectionProvider
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
+import com.jeremy.thunder.event.EventMapper
 import com.jeremy.thunder.event.EventProcessor
+import com.jeremy.thunder.event.IMapper
 import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.WebSocketEventProcessor
 import com.jeremy.thunder.event.converter.ConverterType
 import com.jeremy.thunder.internal.ServiceExecutor
+import com.jeremy.thunder.internal.StateManager
 import com.jeremy.thunder.internal.ThunderProvider
 import com.jeremy.thunder.internal.ThunderStateManager
 import com.jeremy.thunder.network.NetworkConnectivityService
 import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
+import com.jeremy.thunder.ws.Subscribe
 import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.InvocationHandler
@@ -46,6 +50,7 @@ class Thunder private constructor(
             return@InvocationHandler when (annotation) {
                 is Send -> serviceExecutor.executeSend(method, args)
                 is Receive -> serviceExecutor.executeReceive(method, args)
+                is Subscribe -> serviceExecutor.executeSubscribe(method, args)
                 else -> require(false) { "there is no matching annotation" }
             }
         }
@@ -53,9 +58,10 @@ class Thunder private constructor(
 
     class Builder {
         private var webSocketCore: WebSocket.Factory? = null
-        private var thunderStateManager: ThunderStateManager? = null
-        private var context: Context? = null
         private val appConnectionProvider by lazy { AppConnectionProvider() }
+        private var stateManager: StateManager? = null
+        private var iMapperFactory: IMapper.Factory? = null
+        private var context: Context? = null
         private var converterType: ConverterType = ConverterType.Serialization
 
         fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
@@ -69,20 +75,21 @@ class Thunder private constructor(
             converterType = type
         }
 
-        private fun createThunderStateManager(): ThunderStateManager {
-            thunderStateManager = ThunderStateManager.Factory(
+        fun setStateManager(manager: StateManager.Factory) = apply {
+            stateManager = manager.create(
                 connectionListener = appConnectionProvider,
                 networkStatus = createNetworkConnectivity(),
                 cacheController = createCacheController(),
                 webSocketCore = checkNotNull(webSocketCore)
-            ).create()
-            return checkNotNull(thunderStateManager)
+            )
+        }
+
+        fun setEventMapper(mapper: IMapper.Factory) = apply {
+            iMapperFactory = mapper
         }
 
         private fun createCacheController(): CacheController {
-            return CacheController.Factory(
-                scope = scope
-            ).create()
+            return CacheController.Factory(scope).create()
         }
 
         private fun createNetworkConnectivity(): NetworkConnectivityService {
@@ -90,33 +97,57 @@ class Thunder private constructor(
             return NetworkConnectivityServiceImpl(checkNotNull(context))
         }
 
-        private fun createEventProcessor(): EventProcessor<WebSocketEvent> {
-            return WebSocketEventProcessor()
-        }
-
-        private fun createThunderProvider(): ThunderProvider {
-            require(thunderStateManager != null) { "ThunderStateManager should not be null" }
-            return ThunderProvider.Factory(
-                thunderStateManager = checkNotNull(thunderStateManager),
-                eventProcessor = createEventProcessor()
-            ).create()
-        }
-
-        private fun createServiceExecutor(): ServiceExecutor {
-            return ServiceExecutor.Factory(
-                thunderProvider = createThunderProvider(),
-                converterType = converterType,
-                scope = scope
-            ).create()
-        }
 
         fun build(): Thunder {
-            createThunderStateManager()
             return Thunder(
                 webSocketCore = checkNotNull(webSocketCore),
                 serviceExecutor = createServiceExecutor(),
                 scope = scope
             )
+        }
+
+        private fun createServiceExecutor(): ServiceExecutor {
+            checkEventMapperFactory()
+            return ServiceExecutor.Factory(
+                thunderProvider = createThunderProvider(),
+                converterType = converterType,
+                iMapperFactory = requireNotNull(iMapperFactory),
+                scope = scope
+            ).create()
+        }
+
+        private fun checkEventMapperFactory() {
+            if (iMapperFactory == null) {
+                iMapperFactory = EventMapper.Factory()
+            }
+        }
+
+        private fun createThunderProvider(): ThunderProvider {
+            checkStateManager()
+            return ThunderProvider.Factory(
+                thunderStateManager = checkNotNull(stateManager),
+                eventProcessor = createEventProcessor()
+            ).create()
+        }
+
+        private fun createEventProcessor(): EventProcessor<WebSocketEvent> {
+            return WebSocketEventProcessor()
+        }
+
+        private fun checkStateManager() {
+            if (stateManager == null) {
+                createDefaultStateManager()
+            }
+        }
+
+        private fun createDefaultStateManager() {
+            stateManager = ThunderStateManager.Factory()
+                .create(
+                    connectionListener = appConnectionProvider,
+                    networkStatus = createNetworkConnectivity(),
+                    cacheController = createCacheController(),
+                    webSocketCore = checkNotNull(webSocketCore)
+                )
         }
     }
 }
