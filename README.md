@@ -8,13 +8,17 @@ Currently, support only for Coroutine Flow.
 - [Thunder: WebSocket have come through the clouds.](https://medium.com/proandroiddev/%EF%B8%8Fthunder-websocket-have-come-through-the-clouds-4db1a9b31ffa)
 
 ---
+## Example project usage.
+- [CryptoApp](https://github.com/jaeyunn15/CryptoApp) : You can see Thunder embedded in a real-time data architecture.
+
+---
 ## Feature
 - WebSocket connection using OkHttp3.
 - Regardless of the state of your app, if it's alive, it will automatically manage to stay connected. 
 - Provide **retry and reconnect** handling based on the application's network and socket state.     (I called it valve cache, recovery cache)
 - Provide the ability to **automatically recover requests** via the last request cache.
 - Provides **two converter adapters**: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
-- (TBD) Provides a websocket connection based on the Stomp Message Protocol.
+- Provides a websocket connection based on the STOMP. (December, 2023)
 
 ---
 ## Download First
