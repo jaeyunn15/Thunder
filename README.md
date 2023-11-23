@@ -12,13 +12,16 @@ Currently, support only for Coroutine Flow.
 - [CryptoApp](https://github.com/jaeyunn15/CryptoApp) : You can see Thunder embedded in a real-time data architecture.
 
 ---
-## Feature
+## Basic Feature
 - WebSocket connection using OkHttp3.
 - Regardless of the state of your app, if it's alive, it will automatically manage to stay connected. 
-- Provide **retry and reconnect** handling based on the application's network and socket state.     (I called it valve cache, recovery cache)
+- Provide **retry and reconnect** handling based on the application's network and socket state.
 - Provide the ability to **automatically recover requests** via the last request cache.
-- Provides **two converter adapters**: (gson, kotlinx.serialization) (default adapter is kotlinx.serialization)
 - Provides a websocket connection based on the STOMP. (December, 2023)
+
+### Converter 
+- Gson
+- KotlinX-Serialization **(Default)**       
 
 ---
 ## Download First
