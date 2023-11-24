@@ -8,9 +8,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 
 class StompEventMapper<T> constructor(
     private val converter: Converter<T>,
@@ -31,16 +32,17 @@ class StompEventMapper<T> constructor(
 
     init {
         _eventMappingChannel
-            .filter { it is WebSocketEvent.OnMessageReceived }
-            .map { (it as WebSocketEvent.OnMessageReceived).data }
+            .filterIsInstance<WebSocketEvent.OnMessageReceived>()
+            .map { it.data }
             .map(messageCompiler::parseMessage)
             .map(::handleMessage)
-            .map {
-                it?.let {
-                    mapToResultChannel.tryEmit(it)
-                }
-            }
+            .convertNonNullFlow()
+            .map(mapToResultChannel::tryEmit)
             .launchIn(coroutineScope)
+    }
+
+    private fun <T> Flow<T?>.convertNonNullFlow(): Flow<T> = transform {
+        if (it != null) return@transform emit(it)
     }
 
     private fun handleMessage(response: ThunderStompResponse): T? {

@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 
@@ -31,8 +31,8 @@ class EventMapper<T> constructor(
 
     init {
         _eventMappingChannel
-            .filter { it is WebSocketEvent.OnMessageReceived }
-            .map { (it as WebSocketEvent.OnMessageReceived).data}
+            .filterIsInstance<WebSocketEvent.OnMessageReceived>()
+            .map { it.data}
             .map(converter::convert)
             .map(mapToResultChannel::tryEmit)
             .launchIn(coroutineScope)
