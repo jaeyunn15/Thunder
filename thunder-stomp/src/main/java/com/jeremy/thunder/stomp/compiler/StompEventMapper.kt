@@ -54,6 +54,7 @@ class StompEventMapper<T> constructor(
                     null
                 }
             }
+
             else -> null
         }
     }
@@ -64,8 +65,11 @@ class StompEventMapper<T> constructor(
 
     override fun mapEventFlow(): Flow<T> = mapToResultChannel
 
-    class Factory: IMapper.Factory {
-        override fun create(converter: Converter<*>, coroutineScope: CoroutineScope): StompEventMapper<*> {
+    class Factory : IMapper.Factory {
+        override fun create(
+            converter: Converter<*>,
+            coroutineScope: CoroutineScope
+        ): StompEventMapper<*> {
             return StompEventMapper(converter, coroutineScope)
         }
     }

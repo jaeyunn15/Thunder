@@ -43,8 +43,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import java.util.LinkedList
-import java.util.Queue
 import java.util.UUID
 
 class StompStateManager private constructor(
@@ -56,7 +54,7 @@ class StompStateManager private constructor(
     private val scope: CoroutineScope
 ): StateManager {
     private val innerScope = scope + CoroutineExceptionHandler { _, throwable ->
-        //thunderLog("[ThunderStateManager] = ${throwable.message}")
+
     }
 
     private var socket: WebSocket? = null
@@ -73,7 +71,7 @@ class StompStateManager private constructor(
 
     private val _retryNeedFlag = MutableStateFlow<Boolean>(false)
 
-    private val _socketHeaderUUID: HashMap<String, Queue<String>> = hashMapOf()
+    private val headerIdStore by lazy { HeaderIdStore() }
 
     fun thunderStateAsFlow() = _socketState.asStateFlow()
 
@@ -214,7 +212,7 @@ class StompStateManager private constructor(
         socket?.let {
             runCatching {
                 val uuid = UUID.randomUUID().toString()
-                manageHeaderUuid(topic, uuid)
+                headerIdStore.put(topic, uuid)
                 it.send(
                     compileMessage(
                         ThunderStompRequest.Builder()
@@ -260,7 +258,7 @@ class StompStateManager private constructor(
         socket?.let {
             _socketState.update { ThunderState.ERROR() }
             if (it.close(1000, "shutdown")) socket = null
-            _socketHeaderUUID.clear()
+            headerIdStore.clear()
             if (::connectionJob.isInitialized) connectionJob.cancel()
         }
     }
@@ -275,7 +273,7 @@ class StompStateManager private constructor(
         socket?.let {
             runCatching {
                 val uuid = UUID.randomUUID().toString()
-                manageHeaderUuid(topic, uuid)
+                headerIdStore.put(topic, uuid)
                 it.send(
                     compileMessage(
                         ThunderStompRequest.Builder()
@@ -296,13 +294,12 @@ class StompStateManager private constructor(
     private  fun unsubscribe(topic: String) {
         socket?.let {
             runCatching {
-                val uuid = getHeaderUuid(topic)
                 it.send(
                     compileMessage(
                         ThunderStompRequest.Builder()
                             .command(Command.SUBSCRIBE)
                             .header(
-                                ID to uuid,
+                                ID to headerIdStore[topic],
                                 DESTINATION to topic,
                                 ACK to DEFAULT_ACK,
                             )
@@ -310,22 +307,6 @@ class StompStateManager private constructor(
                     )
                 )
             }
-        }
-    }
-
-    private fun manageHeaderUuid(topic: String, uuid: String) {
-        if (_socketHeaderUUID.containsKey(topic) && !_socketHeaderUUID[topic].isNullOrEmpty()) {
-            _socketHeaderUUID[topic]?.offer(uuid)
-        } else {
-            _socketHeaderUUID[topic] = LinkedList<String>().apply { offer(uuid) }
-        }
-    }
-
-    private fun getHeaderUuid(topic: String): String {
-        return if (_socketHeaderUUID.containsKey(topic) && !_socketHeaderUUID[topic].isNullOrEmpty()) {
-            _socketHeaderUUID[topic]?.poll() ?: ""
-        } else {
-            ""
         }
     }
 

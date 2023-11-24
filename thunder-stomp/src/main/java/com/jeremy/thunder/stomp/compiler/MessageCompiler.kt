@@ -6,7 +6,7 @@ import java.util.regex.Pattern
 
 object MessageCompiler {
     private val PATTERN_HEADER = Pattern.compile("([^:\\s]+)\\s*:\\s*([^:\\s]+)")
-    const val TERMINATE_MESSAGE_SYMBOL = "\u0000"
+    private const val TERMINATE_MESSAGE_SYMBOL = "\u0000"
 
     fun compileMessage(message: ThunderStompRequest): String = buildString {
         append("${message.command}\n")
