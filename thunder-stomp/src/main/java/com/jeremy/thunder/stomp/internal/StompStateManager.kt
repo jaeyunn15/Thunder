@@ -16,9 +16,10 @@ import com.jeremy.thunder.state.ShutDown
 import com.jeremy.thunder.state.StompManager
 import com.jeremy.thunder.state.StompRequest
 import com.jeremy.thunder.state.ThunderError
+import com.jeremy.thunder.state.ThunderRequest
 import com.jeremy.thunder.state.ThunderState
 import com.jeremy.thunder.stomp.compiler.MessageCompiler.compileMessage
-import com.jeremy.thunder.stomp.compiler.ThunderStompRequest
+import com.jeremy.thunder.stomp.compiler.thunderStompRequest
 import com.jeremy.thunder.stomp.model.ACK
 import com.jeremy.thunder.stomp.model.Command
 import com.jeremy.thunder.stomp.model.DEFAULT_ACK
@@ -46,8 +47,8 @@ import kotlinx.coroutines.plus
 import java.util.UUID
 
 class StompStateManager private constructor(
-    connectionListener: AppConnectionListener,
-    networkState: NetworkConnectivityService,
+    private val connectionListener: AppConnectionListener,
+    private val networkState: NetworkConnectivityService,
     private val recoveryCache: RecoveryCache,
     private val valveCache: ValveCache,
     private val webSocketCore: WebSocket.Factory,
@@ -132,7 +133,7 @@ class StompStateManager private constructor(
          * */
         combine(
             _socketState,
-            connectionListener.collectState()
+            connectionListener.collectState() // App State
         ) { socketState, appState ->
             when (appState) {
                 Initialize -> {
@@ -153,8 +154,7 @@ class StompStateManager private constructor(
 
         combine(
             _socketState,
-            valveCache.
-            emissionOfValveFlow()
+            valveCache.emissionOfValveFlow() // Request Flow
         ) { currentSocketState, request ->
             when (currentSocketState) {
                 ThunderState.CONNECTED -> {
@@ -179,21 +179,21 @@ class StompStateManager private constructor(
         _retryNeedFlag.update { false }
     }
 
-    private fun requestExecute(message: com.jeremy.thunder.state.ThunderRequest) = innerScope.launch(Dispatchers.IO) {
+    private fun requestExecute(message: ThunderRequest) = innerScope.launch(Dispatchers.IO) {
         val request = message as StompRequest
         when (request.command) {
-            "subscribe" -> {
+            Command.SUBSCRIBE.name.lowercase() -> {
                 subscribe(
                     topic = request.destination,
                     payload = request.payload.orEmpty()
                 )
             }
-            "unsubscribe" -> {
+            Command.UNSUBSCRIBE.name.lowercase() -> {
                 unsubscribe(
                     topic = request.destination
                 )
             }
-            "send" -> {
+            Command.SEND.name.lowercase() -> {
                 sendMessage(
                     topic = request.destination,
                     payload = request.payload.orEmpty()
@@ -215,15 +215,15 @@ class StompStateManager private constructor(
                 headerIdStore.put(topic, uuid)
                 it.send(
                     compileMessage(
-                        ThunderStompRequest.Builder()
-                            .command(Command.SEND)
-                            .header(
-                                ID to uuid,
-                                DESTINATION to topic,
-                                ACK to DEFAULT_ACK,
-                            )
-                            .payload(payload)
-                            .build()
+                        thunderStompRequest {
+                            this.command = Command.SEND
+                            header {
+                                ID to uuid
+                                DESTINATION to topic
+                                ACK to DEFAULT_ACK
+                            }
+                            this.payload = payload
+                        }
                     )
                 )
             }
@@ -241,10 +241,12 @@ class StompStateManager private constructor(
                     if (it is WebSocketEvent.OnConnectionOpen) {
                         webSocket.send(
                             compileMessage(
-                                ThunderStompRequest.Builder()
-                                    .command(Command.CONNECT)
-                                    .header(VERSION to SUPPORTED_VERSIONS)
-                                    .build()
+                                thunderStompRequest {
+                                    command = Command.CONNECT
+                                    header {
+                                        VERSION to SUPPORTED_VERSIONS
+                                    }
+                                }
                             )
                         )
                     }
@@ -255,55 +257,55 @@ class StompStateManager private constructor(
     }
 
     private fun closeConnection() = synchronized(this) {
-        socket?.let {
+        socket?.let { websocket ->
             _socketState.update { ThunderState.ERROR() }
-            if (it.close(1000, "shutdown")) socket = null
+            if (websocket.close(1000, "shutdown")) socket = null
             headerIdStore.clear()
             if (::connectionJob.isInitialized) connectionJob.cancel()
         }
     }
 
-    override fun send(message: com.jeremy.thunder.state.ThunderRequest) {
+    override fun send(message: ThunderRequest) {
         val request = message as StompRequest
         valveCache.requestToValve(request)
         recoveryCache.set(request)
     }
 
     private fun subscribe(topic: String, payload: String) {
-        socket?.let {
+        socket?.let { websocket ->
             runCatching {
                 val uuid = UUID.randomUUID().toString()
                 headerIdStore.put(topic, uuid)
-                it.send(
-                    compileMessage(
-                        ThunderStompRequest.Builder()
-                            .command(Command.SUBSCRIBE)
-                            .header(
-                                ID to uuid,
-                                DESTINATION to topic,
-                                ACK to DEFAULT_ACK,
-                            )
-                            .payload(payload)
-                            .build()
-                    )
+                val request = compileMessage(thunderStompRequest {
+                    this.command = Command.SUBSCRIBE
+                    header {
+                        ID to uuid
+                        DESTINATION to topic
+                        ACK to DEFAULT_ACK
+                    }
+                    this.payload = payload
+                })
+                websocket.send(
+                    request
                 )
             }
         }
     }
 
     private  fun unsubscribe(topic: String) {
-        socket?.let {
+        socket?.let { websocket ->
             runCatching {
-                it.send(
+                websocket.send(
                     compileMessage(
-                        ThunderStompRequest.Builder()
-                            .command(Command.SUBSCRIBE)
-                            .header(
-                                ID to headerIdStore[topic],
-                                DESTINATION to topic,
-                                ACK to DEFAULT_ACK,
-                            )
-                            .build()
+                        thunderStompRequest {
+                            this.command = Command.UNSUBSCRIBE
+                            header {
+                                ID to headerIdStore[topic]
+                                DESTINATION to topic
+                                ACK to DEFAULT_ACK
+                            }
+                            this.payload = payload
+                        }
                     )
                 )
             }

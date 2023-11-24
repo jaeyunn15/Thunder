@@ -4,32 +4,42 @@ import com.jeremy.thunder.stomp.model.Command
 import com.jeremy.thunder.stomp.model.Header
 import com.jeremy.thunder.stomp.model.HeaderMap
 
-class ThunderStompRequest private constructor(
+data class ThunderStompRequest(
     val command: Command,
     val header: Header,
     val payload: String?
-) {
+)
 
-    class Builder {
-        private var command: Command? = null
-        private var header: Header? = null
-        private var payload: String? = null
-        private val list = mutableListOf<HeaderMap>()
+class ThunderStompHeaderBuilder {
+    private var pairList: MutableList<HeaderMap> = mutableListOf()
 
-        fun command(value: Command) = apply { command = value }
-
-        fun header(vararg pair: HeaderMap) = apply {
-            pair.map(list::add)
-            header = Header(list)
-        }
-
-        fun payload(value: String) = apply { payload = value }
-
-        fun build(): ThunderStompRequest {
-            requireNotNull(command) { "Command must be set" }
-            requireNotNull(header) { "Header must be set" }
-
-            return ThunderStompRequest(command!!, header!!, payload)
-        }
+    infix fun String.to(that: String) {
+        pairList.add(Pair(this, that))
     }
+
+    fun build(): Header {
+        return Header(
+            pairList = pairList
+        )
+    }
+}
+
+class ThunderStompRequestBuilder {
+    var command: Command? = null
+    var header: Header? = null
+    var payload: String? = null
+
+    fun header(init: ThunderStompHeaderBuilder.() -> Unit) {
+        header = ThunderStompHeaderBuilder().apply(init).build()
+    }
+}
+
+fun thunderStompRequest(init: ThunderStompRequestBuilder.() -> Unit): ThunderStompRequest {
+    val builder = ThunderStompRequestBuilder()
+    builder.init()
+    return ThunderStompRequest(
+        command = requireNotNull(builder.command) { "Command must be specified" },
+        header = requireNotNull(builder.header) { "Header must be specified" },
+        payload = builder.payload
+    )
 }

@@ -12,7 +12,7 @@ object MessageCompiler {
         append("${message.command}\n")
         append(message.header.extract())
         append("\n")
-        append("${message.payload}\n\n")
+        if (!message.payload.isNullOrEmpty()) append("${message.payload}\n\n")
         append(TERMINATE_MESSAGE_SYMBOL)
     }
 

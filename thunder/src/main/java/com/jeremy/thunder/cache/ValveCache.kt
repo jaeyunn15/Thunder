@@ -2,7 +2,6 @@ package com.jeremy.thunder.cache
 
 import com.jeremy.thunder.state.ThunderRequest
 import com.jeremy.thunder.state.ThunderState
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -19,9 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
  * This exists to automatically manage socket requests when you make them, regardless of the current state of Thunder.
  * */
 
-class ValveCache(
-    scope: CoroutineScope
-) {
+class ValveCache {
     private val isEmissiable = MutableStateFlow<Boolean>(true)
 
     private val innerQueue = ConcurrentLinkedQueue<ThunderRequest>()
@@ -35,7 +32,7 @@ class ValveCache(
                 }
                 emit(emitCacheList)
             }
-            delay(300)
+            delay(500)
         }
     }
 
@@ -49,11 +46,9 @@ class ValveCache(
 
     fun emissionOfValveFlow(): Flow<List<ThunderRequest>> = cacheFlow()
 
-    class Factory(
-        private val scope: CoroutineScope
-    ) {
+    class Factory {
         fun create(): ValveCache {
-            return ValveCache(scope)
+            return ValveCache()
         }
     }
 }

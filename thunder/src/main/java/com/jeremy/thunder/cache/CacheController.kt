@@ -24,7 +24,7 @@ class CacheController(
         }
 
         private fun createValveCache(): ValveCache {
-            return ValveCache.Factory(scope).create()
+            return ValveCache.Factory().create()
         }
 
         fun create(): CacheController {
