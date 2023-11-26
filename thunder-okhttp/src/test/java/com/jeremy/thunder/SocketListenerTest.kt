@@ -1,6 +1,6 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.thunder_internal.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.mockk
@@ -23,7 +23,7 @@ internal class SocketListenerTest : BehaviorSpec({
 
             Then("Receive OnMessage Event") {
                 socketListener.collectEvent()
-                    .first() shouldBe com.jeremy.thunder.thunder_internal.WebSocketEvent.OnMessageReceived("Hello World")
+                    .first() shouldBe WebSocketEvent.OnMessageReceived("Hello World")
             }
         }
 
@@ -33,7 +33,7 @@ internal class SocketListenerTest : BehaviorSpec({
 
             Then("Receive OnMessage Event") {
                 socketListener.collectEvent()
-                    .first() shouldBe com.jeremy.thunder.thunder_internal.WebSocketEvent.OnMessageReceived("Hello World")
+                    .first() shouldBe WebSocketEvent.OnMessageReceived("Hello World")
             }
         }
 
@@ -42,7 +42,7 @@ internal class SocketListenerTest : BehaviorSpec({
 
             Then("Receive OnFailure Event") {
                 socketListener.collectEvent()
-                    .first() shouldBe com.jeremy.thunder.thunder_internal.WebSocketEvent.OnConnectionError("This is test throwable")
+                    .first() shouldBe WebSocketEvent.OnConnectionError("This is test throwable")
             }
         }
 
@@ -50,7 +50,7 @@ internal class SocketListenerTest : BehaviorSpec({
             socketListener.onClosed(webSocket, 1001, "Some reason")
 
             Then("Receive onClosed Event") {
-                socketListener.collectEvent().first() shouldBe com.jeremy.thunder.thunder_internal.WebSocketEvent.OnConnectionClosed
+                socketListener.collectEvent().first() shouldBe WebSocketEvent.OnConnectionClosed
             }
         }
     }
