@@ -12,11 +12,12 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:name=".App"
+        android:name="com.jeremy.thunder.App"
         android:theme="@style/Theme.Thunder"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
-            android:name=".MainActivity"
+            android:name="com.jeremy.thunder.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.Thunder">
