@@ -72,3 +72,6 @@ dependencies {
 
     testImplementation 'app.cash.turbine:turbine:1.0.0'
 }
+
+group='com.jeremy.thunder'
+version='1.0.0'

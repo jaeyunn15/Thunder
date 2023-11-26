@@ -63,3 +63,6 @@ dependencies {
 
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1'
 }
+
+group='com.jeremy.thunder'
+version='1.0.0'
