@@ -1,10 +1,9 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.ws.WebSocket
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-fun OkHttpClient.makeWebSocketCore(url: String): WebSocket.Factory {
+fun OkHttpClient.makeWebSocketCore(url: String): com.jeremy.thunder.thunder_internal.WebSocket.Factory {
     return OkHttpWebSocket.Factory(
         provider = ConnectionProvider(this, url),
     )

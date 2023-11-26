@@ -5,7 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import com.jeremy.thunder.state.NetworkState
+import com.jeremy.thunder.thunder_internal.state.NetworkState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.flowOn
 
 class NetworkConnectivityServiceImpl constructor (
     context: Context
-): NetworkConnectivityService {
+): com.jeremy.thunder.thunder_internal.NetworkConnectivityService {
 
     private val networks = HashSet<Long>()
 

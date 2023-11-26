@@ -1,6 +1,6 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.WebSocketEvent
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.first
 import okhttp3.WebSocket
 
 private val webSocket = mockk<WebSocket>()
-private val eventFlow = MutableSharedFlow<WebSocketEvent>(replay = 1, extraBufferCapacity = 100)
+private val eventFlow = MutableSharedFlow<com.jeremy.thunder.thunder_internal.WebSocketEvent>(replay = 1, extraBufferCapacity = 100)
 private val webSocketListener = mockk<SocketListener>() {
     every { collectEvent() } returns eventFlow
 }
@@ -35,14 +35,14 @@ private val okHttpWebSocket = OkHttpWebSocket(
 
 internal class OkHttpWebSocketTest : BehaviorSpec({
     Given("WebSocket Open Event Emit") {
-        val events = arrayOf(spyk<WebSocketEvent>(WebSocketEvent.OnConnectionOpen(webSocket)))
+        val events = arrayOf(spyk<com.jeremy.thunder.thunder_internal.WebSocketEvent>(com.jeremy.thunder.thunder_internal.WebSocketEvent.OnConnectionOpen(webSocket)))
         events.forEach { eventFlow.tryEmit(it) }
 
         When("WebSocket Open") {
             val resultFlow = okHttpWebSocket.open()
 
             Then("Receive WebSocket Connection Open Event") {
-                resultFlow.first() shouldBe WebSocketEvent.OnConnectionOpen(webSocket)
+                resultFlow.first() shouldBe com.jeremy.thunder.thunder_internal.WebSocketEvent.OnConnectionOpen(webSocket)
             }
         }
 

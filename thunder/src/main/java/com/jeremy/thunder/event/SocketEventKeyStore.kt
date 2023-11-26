@@ -1,13 +1,9 @@
 package com.jeremy.thunder.event
 
-import com.jeremy.thunder.event.converter.Converter
+import com.jeremy.thunder.thunder_internal.Converter
+import com.jeremy.thunder.thunder_internal.IMapper
 import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.Type
-
-/**
- * 특정 어노테이션과 리턴 타입에 대해선 하나의 파이프라인으로 데이터가 통하도록 생성.
- * return type: Flow<TickerResponse> 라면 @Receive + Flow<TickerResponse>를 리턴 타입으로 갖는 메소드는 동일한 EventMapper를 사용하여 데이터를 역직렬화 하게 됨
-* */
 
 class SocketEventKeyStore {
 

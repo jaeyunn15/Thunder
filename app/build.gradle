@@ -52,6 +52,7 @@ android {
 
 dependencies {
     implementation project(':thunder')
+    implementation project(':thunder-internal')
     implementation project(':thunder-okhttp')
     implementation project(':thunder-stomp')
 

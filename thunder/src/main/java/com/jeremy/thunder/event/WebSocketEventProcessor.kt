@@ -1,5 +1,7 @@
 package com.jeremy.thunder.event
 
+import com.jeremy.thunder.thunder_internal.EventProcessor
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking

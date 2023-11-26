@@ -1,24 +1,29 @@
 package com.jeremy.thunder.cache
 
-import kotlinx.coroutines.CoroutineScope
+import com.jeremy.thunder.thunder_internal.BaseRecovery
+import com.jeremy.thunder.thunder_internal.BaseValve
+import com.jeremy.thunder.thunder_internal.ICacheController
+import com.jeremy.thunder.thunder_internal.event.ThunderRequest
 
 /**
  * A controller that handles caching for requests from interfaces with the @Send annotation.
  * */
 
-class CacheController(
-    private val recoveryCache: RecoveryCache,
-    private val valveCache: ValveCache
-) {
+class CacheController (
+    private val recoveryCache: BaseRecovery<ThunderRequest>,
+    private val valveCache: BaseValve<ThunderRequest>
+): ICacheController<ThunderRequest> {
 
-    val rCache: RecoveryCache get() = recoveryCache
+    override fun getRecovery(): BaseRecovery<ThunderRequest> {
+        return recoveryCache
+    }
 
-    val vCache: ValveCache get() = valveCache
+    override fun getValve(): BaseValve<ThunderRequest> {
+        return valveCache
+    }
 
 
-    class Factory(
-        private val scope: CoroutineScope
-    ) {
+    class Factory() {
         private fun createRecoveryCache(): RecoveryCache {
             return RecoveryCache.Factory().create()
         }

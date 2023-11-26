@@ -1,6 +1,8 @@
 package com.jeremy.thunder.event
 
-import com.jeremy.thunder.event.converter.Converter
+import com.jeremy.thunder.thunder_internal.Converter
+import com.jeremy.thunder.thunder_internal.IMapper
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -48,16 +50,5 @@ class EventMapper<T> constructor(
         override fun create(converter: Converter<*>, coroutineScope: CoroutineScope): EventMapper<*> {
             return EventMapper(converter, coroutineScope)
         }
-    }
-}
-
-
-interface IMapper<T> {
-    fun mapEventToGeneric(event: WebSocketEvent)
-
-    fun mapEventFlow(): Flow<T>
-
-    interface Factory {
-        fun create(converter: Converter<*>, coroutineScope: CoroutineScope): IMapper<*>
     }
 }

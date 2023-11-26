@@ -1,4 +1,4 @@
-package com.jeremy.thunder.event.converter
+package com.jeremy.thunder.thunder_internal
 
 interface Converter<T> {
     fun convert(data: String): T

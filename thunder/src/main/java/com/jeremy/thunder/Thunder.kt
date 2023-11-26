@@ -6,27 +6,24 @@ import com.jeremy.thunder.cache.CacheController
 import com.jeremy.thunder.connection.AppConnectionProvider
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.event.EventMapper
-import com.jeremy.thunder.event.EventProcessor
-import com.jeremy.thunder.event.IMapper
-import com.jeremy.thunder.event.WebSocketEvent
 import com.jeremy.thunder.event.WebSocketEventProcessor
 import com.jeremy.thunder.event.converter.ConverterType
 import com.jeremy.thunder.internal.ServiceExecutor
-import com.jeremy.thunder.internal.StateManager
 import com.jeremy.thunder.internal.ThunderProvider
 import com.jeremy.thunder.internal.ThunderStateManager
-import com.jeremy.thunder.network.NetworkConnectivityService
 import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
+import com.jeremy.thunder.thunder_internal.EventProcessor
+import com.jeremy.thunder.thunder_internal.IMapper
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
 import com.jeremy.thunder.ws.Subscribe
-import com.jeremy.thunder.ws.WebSocket
 import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
 class Thunder private constructor(
-    private val webSocketCore: WebSocket.Factory,
+    private val webSocketCore: com.jeremy.thunder.thunder_internal.WebSocket.Factory,
     serviceExecutor: ServiceExecutor,
     private val scope: CoroutineScope
 ) {
@@ -57,14 +54,14 @@ class Thunder private constructor(
     }
 
     class Builder {
-        private var webSocketCore: WebSocket.Factory? = null
+        private var webSocketCore: com.jeremy.thunder.thunder_internal.WebSocket.Factory? = null
         private val appConnectionProvider by lazy { AppConnectionProvider() }
-        private var stateManager: StateManager? = null
+        private var stateManager: com.jeremy.thunder.thunder_internal.StateManager? = null
         private var iMapperFactory: IMapper.Factory? = null
         private var context: Context? = null
         private var converterType: ConverterType = ConverterType.Serialization
 
-        fun webSocketCore(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
+        fun webSocketCore(core: com.jeremy.thunder.thunder_internal.WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
         fun setApplicationContext(context: Context): Builder = apply {
             this.context = context
@@ -75,7 +72,7 @@ class Thunder private constructor(
             converterType = type
         }
 
-        fun setStateManager(manager: StateManager.Factory) = apply {
+        fun setStateManager(manager: com.jeremy.thunder.thunder_internal.StateManager.Factory) = apply {
             stateManager = manager.create(
                 connectionListener = appConnectionProvider,
                 networkStatus = createNetworkConnectivity(),
@@ -89,10 +86,10 @@ class Thunder private constructor(
         }
 
         private fun createCacheController(): CacheController {
-            return CacheController.Factory(scope).create()
+            return CacheController.Factory().create()
         }
 
-        private fun createNetworkConnectivity(): NetworkConnectivityService {
+        private fun createNetworkConnectivity(): com.jeremy.thunder.thunder_internal.NetworkConnectivityService {
             require(context != null) { "Application Context should be set before request build()" }
             return NetworkConnectivityServiceImpl(checkNotNull(context))
         }

@@ -1,6 +1,6 @@
-package com.jeremy.thunder.network
+package com.jeremy.thunder.thunder_internal
 
-import com.jeremy.thunder.state.NetworkState
+import com.jeremy.thunder.thunder_internal.state.NetworkState
 import kotlinx.coroutines.flow.Flow
 
 interface NetworkConnectivityService {

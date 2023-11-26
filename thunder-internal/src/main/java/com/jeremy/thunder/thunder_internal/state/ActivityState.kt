@@ -1,4 +1,4 @@
-package com.jeremy.thunder.state
+package com.jeremy.thunder.thunder_internal.state
 
 sealed interface ActivityState
 

@@ -1,9 +1,9 @@
 package com.jeremy.thunder.stomp.compiler
 
-import com.jeremy.thunder.event.IMapper
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.event.converter.Converter
 import com.jeremy.thunder.stomp.model.DESTINATION
+import com.jeremy.thunder.thunder_internal.Converter
+import com.jeremy.thunder.thunder_internal.IMapper
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow

@@ -1,6 +1,7 @@
 package com.jeremy.thunder.event.converter
 
 import com.jeremy.thunder.thunderLog
+import com.jeremy.thunder.thunder_internal.Converter
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialFormat

@@ -1,25 +1,26 @@
 package com.jeremy.thunder.internal
 
-import com.jeremy.thunder.cache.CacheController
-import com.jeremy.thunder.cache.RecoveryCache
-import com.jeremy.thunder.cache.ValveCache
-import com.jeremy.thunder.connection.AppConnectionListener
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.network.NetworkConnectivityService
-import com.jeremy.thunder.state.Background
-import com.jeremy.thunder.state.Foreground
-import com.jeremy.thunder.state.Initialize
-import com.jeremy.thunder.state.ManagerState
-import com.jeremy.thunder.state.NetworkState
-import com.jeremy.thunder.state.ShutDown
-import com.jeremy.thunder.state.ThunderError
-import com.jeremy.thunder.state.ThunderManager
-import com.jeremy.thunder.state.ThunderRequest
-import com.jeremy.thunder.state.ThunderState
-import com.jeremy.thunder.state.WebSocketRequest
 import com.jeremy.thunder.thunderLog
-import com.jeremy.thunder.ws.WebSocket
+import com.jeremy.thunder.thunder_internal.AppConnectionListener
+import com.jeremy.thunder.thunder_internal.BaseRecovery
+import com.jeremy.thunder.thunder_internal.BaseValve
+import com.jeremy.thunder.thunder_internal.ICacheController
+import com.jeremy.thunder.thunder_internal.NetworkConnectivityService
+import com.jeremy.thunder.thunder_internal.StateManager
+import com.jeremy.thunder.thunder_internal.WebSocket
+import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.event.WebSocketRequest
+import com.jeremy.thunder.thunder_internal.state.Background
+import com.jeremy.thunder.thunder_internal.state.Foreground
+import com.jeremy.thunder.thunder_internal.state.Initialize
+import com.jeremy.thunder.thunder_internal.state.ManagerState
+import com.jeremy.thunder.thunder_internal.state.NetworkState
+import com.jeremy.thunder.thunder_internal.state.ShutDown
+import com.jeremy.thunder.thunder_internal.state.ThunderError
+import com.jeremy.thunder.thunder_internal.state.ThunderManager
+import com.jeremy.thunder.thunder_internal.state.ThunderState
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -42,8 +43,8 @@ import kotlinx.coroutines.plus
 class ThunderStateManager private constructor(
     connectionListener: AppConnectionListener,
     networkState: NetworkConnectivityService,
-    private val recoveryCache: RecoveryCache,
-    private val valveCache: ValveCache,
+    private val recoveryCache: BaseRecovery<ThunderRequest>,
+    private val valveCache: BaseValve<ThunderRequest>,
     private val webSocketCore: WebSocket.Factory,
     private val scope: CoroutineScope
 ): StateManager {
@@ -209,14 +210,14 @@ class ThunderStateManager private constructor(
         override fun create(
             connectionListener: AppConnectionListener,
             networkStatus: NetworkConnectivityService,
-            cacheController: CacheController,
+            cacheController: ICacheController<ThunderRequest>,
             webSocketCore: WebSocket.Factory
         ): StateManager {
             return ThunderStateManager(
                 connectionListener = connectionListener,
                 networkState = networkStatus,
-                recoveryCache = cacheController.rCache,
-                valveCache = cacheController.vCache,
+                recoveryCache = cacheController.getRecovery(),
+                valveCache = cacheController.getValve(),
                 webSocketCore = webSocketCore,
                 scope = scope
             )

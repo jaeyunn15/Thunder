@@ -3,16 +3,16 @@ package com.jeremy.thunder.connection
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
-import com.jeremy.thunder.state.ActivityState
-import com.jeremy.thunder.state.Background
-import com.jeremy.thunder.state.Foreground
-import com.jeremy.thunder.state.Initialize
-import com.jeremy.thunder.state.ShutDown
+import com.jeremy.thunder.thunder_internal.state.ActivityState
+import com.jeremy.thunder.thunder_internal.state.Background
+import com.jeremy.thunder.thunder_internal.state.Foreground
+import com.jeremy.thunder.thunder_internal.state.Initialize
+import com.jeremy.thunder.thunder_internal.state.ShutDown
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class AppConnectionProvider : AppConnectionListener, Application.ActivityLifecycleCallbacks {
+class AppConnectionProvider : com.jeremy.thunder.thunder_internal.AppConnectionListener, Application.ActivityLifecycleCallbacks {
 
     private val _eventFlow = MutableStateFlow<ActivityState>(Initialize)
 

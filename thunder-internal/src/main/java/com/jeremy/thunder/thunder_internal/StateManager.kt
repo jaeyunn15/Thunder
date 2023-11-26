@@ -1,12 +1,8 @@
-package com.jeremy.thunder.internal
+package com.jeremy.thunder.thunder_internal
 
-import com.jeremy.thunder.cache.CacheController
-import com.jeremy.thunder.connection.AppConnectionListener
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.network.NetworkConnectivityService
-import com.jeremy.thunder.state.ManagerState
-import com.jeremy.thunder.state.ThunderRequest
-import com.jeremy.thunder.ws.WebSocket
+import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.state.ManagerState
 import kotlinx.coroutines.flow.Flow
 
 interface StateManager {
@@ -23,7 +19,7 @@ interface StateManager {
         fun create(
             connectionListener: AppConnectionListener,
             networkStatus: NetworkConnectivityService,
-            cacheController: CacheController,
+            cacheController: ICacheController<ThunderRequest>,
             webSocketCore: WebSocket.Factory
         ): StateManager
     }

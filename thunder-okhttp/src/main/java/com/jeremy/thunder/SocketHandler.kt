@@ -1,11 +1,10 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.ws.WebSocket
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
-class SocketHandler : WebSocket {
+class SocketHandler : com.jeremy.thunder.thunder_internal.WebSocket {
 
     private var socket: okhttp3.WebSocket? = null
 

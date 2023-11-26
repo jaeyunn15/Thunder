@@ -1,19 +1,19 @@
 package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
-import com.jeremy.thunder.event.EventProcessor
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.state.StompManager
-import com.jeremy.thunder.state.StompRequest
-import com.jeremy.thunder.state.ThunderManager
-import com.jeremy.thunder.state.ThunderRequest
+import com.jeremy.thunder.thunder_internal.EventProcessor
+import com.jeremy.thunder.thunder_internal.event.StompRequest
+import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.state.StompManager
+import com.jeremy.thunder.thunder_internal.state.ThunderManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
 class ThunderProvider internal constructor(
-    private val stateManager: StateManager,
+    private val stateManager: com.jeremy.thunder.thunder_internal.StateManager,
     private val eventProcessor: EventProcessor<WebSocketEvent>,
     scope: CoroutineScope
 ) {
@@ -44,7 +44,7 @@ class ThunderProvider internal constructor(
     }
 
     class Factory(
-        private val thunderStateManager: StateManager,
+        private val thunderStateManager: com.jeremy.thunder.thunder_internal.StateManager,
         private val eventProcessor: EventProcessor<WebSocketEvent>
     ) {
 

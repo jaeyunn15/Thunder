@@ -1,23 +1,5 @@
 package com.jeremy.thunder.stomp.internal
 
-import com.jeremy.thunder.cache.CacheController
-import com.jeremy.thunder.cache.RecoveryCache
-import com.jeremy.thunder.cache.ValveCache
-import com.jeremy.thunder.connection.AppConnectionListener
-import com.jeremy.thunder.event.WebSocketEvent
-import com.jeremy.thunder.internal.StateManager
-import com.jeremy.thunder.network.NetworkConnectivityService
-import com.jeremy.thunder.state.Background
-import com.jeremy.thunder.state.Foreground
-import com.jeremy.thunder.state.Initialize
-import com.jeremy.thunder.state.ManagerState
-import com.jeremy.thunder.state.NetworkState
-import com.jeremy.thunder.state.ShutDown
-import com.jeremy.thunder.state.StompManager
-import com.jeremy.thunder.state.StompRequest
-import com.jeremy.thunder.state.ThunderError
-import com.jeremy.thunder.state.ThunderRequest
-import com.jeremy.thunder.state.ThunderState
 import com.jeremy.thunder.stomp.compiler.MessageCompiler.compileMessage
 import com.jeremy.thunder.stomp.compiler.thunderStompRequest
 import com.jeremy.thunder.stomp.model.ACK
@@ -27,7 +9,25 @@ import com.jeremy.thunder.stomp.model.DESTINATION
 import com.jeremy.thunder.stomp.model.ID
 import com.jeremy.thunder.stomp.model.SUPPORTED_VERSIONS
 import com.jeremy.thunder.stomp.model.VERSION
-import com.jeremy.thunder.ws.WebSocket
+import com.jeremy.thunder.thunder_internal.AppConnectionListener
+import com.jeremy.thunder.thunder_internal.BaseRecovery
+import com.jeremy.thunder.thunder_internal.BaseValve
+import com.jeremy.thunder.thunder_internal.ICacheController
+import com.jeremy.thunder.thunder_internal.NetworkConnectivityService
+import com.jeremy.thunder.thunder_internal.StateManager
+import com.jeremy.thunder.thunder_internal.WebSocket
+import com.jeremy.thunder.thunder_internal.event.StompRequest
+import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.state.Background
+import com.jeremy.thunder.thunder_internal.state.Foreground
+import com.jeremy.thunder.thunder_internal.state.Initialize
+import com.jeremy.thunder.thunder_internal.state.ManagerState
+import com.jeremy.thunder.thunder_internal.state.NetworkState
+import com.jeremy.thunder.thunder_internal.state.ShutDown
+import com.jeremy.thunder.thunder_internal.state.StompManager
+import com.jeremy.thunder.thunder_internal.state.ThunderError
+import com.jeremy.thunder.thunder_internal.state.ThunderState
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -49,8 +49,8 @@ import java.util.UUID
 class StompStateManager private constructor(
     private val connectionListener: AppConnectionListener,
     private val networkState: NetworkConnectivityService,
-    private val recoveryCache: RecoveryCache,
-    private val valveCache: ValveCache,
+    private val recoveryCache: BaseRecovery<ThunderRequest>,
+    private val valveCache: BaseValve<ThunderRequest>,
     private val webSocketCore: WebSocket.Factory,
     private val scope: CoroutineScope
 ): StateManager {
@@ -60,7 +60,8 @@ class StompStateManager private constructor(
 
     private var socket: WebSocket? = null
 
-    private val _socketState = MutableStateFlow<ThunderState>(ThunderState.IDLE)
+    private val _socketState = MutableStateFlow<ThunderState>(
+        ThunderState.IDLE)
 
     private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
 
@@ -304,7 +305,6 @@ class StompStateManager private constructor(
                                 DESTINATION to topic
                                 ACK to DEFAULT_ACK
                             }
-                            this.payload = payload
                         }
                     )
                 )
@@ -316,14 +316,14 @@ class StompStateManager private constructor(
         override fun create(
             connectionListener: AppConnectionListener,
             networkStatus: NetworkConnectivityService,
-            cacheController: CacheController,
+            cacheController: ICacheController<ThunderRequest>,
             webSocketCore: WebSocket.Factory
         ): StateManager {
             return StompStateManager(
                 connectionListener = connectionListener,
                 networkState = networkStatus,
-                recoveryCache = cacheController.rCache,
-                valveCache = cacheController.vCache,
+                recoveryCache = cacheController.getRecovery(),
+                valveCache = cacheController.getValve(),
                 webSocketCore = webSocketCore,
                 scope = CoroutineScope(SupervisorJob())
             )

@@ -3,6 +3,7 @@ package com.jeremy.thunder.event.converter
 import com.google.gson.Gson
 import com.google.gson.TypeAdapter
 import com.google.gson.reflect.TypeToken
+import com.jeremy.thunder.thunder_internal.Converter
 import java.io.StringReader
 import java.lang.reflect.Type
 
