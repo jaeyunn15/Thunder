@@ -1,7 +1,7 @@
 package com.jeremy.thunder.navGraph
 
 import androidx.annotation.DrawableRes
-import com.jeremy.thunder.R
+import com.jeremy.thunder.demo.R
 
 sealed class BottomNavItem(
     val title: Int,
