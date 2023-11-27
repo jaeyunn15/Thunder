@@ -1,5 +1,5 @@
 # Thunder
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.jaeyunn15/thunder/badge.svg?style=plastic)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.jaeyunn15/thunder?style=flat-square&logo=android)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 Currently, support only for Coroutine Flow.     
@@ -42,7 +42,7 @@ dependencyResolutionManagement {
 ~~~
 
 Use the library by adding a Dependency to the module you want to use.    
-Check Latest Version here : [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.jaeyunn15/thunder/badge.svg?style=plastic)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
+Check Latest Version here : [![Maven Central](https://img.shields.io/maven-central/v/io.github.jaeyunn15/thunder?style=social)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
 ~~~ groovy
 Gradle
 dependencies {
