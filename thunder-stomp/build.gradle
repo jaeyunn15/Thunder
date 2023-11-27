@@ -2,26 +2,10 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
-    id 'maven-publish'
+    id 'com.vanniktech.maven.publish'
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            release(MavenPublication) {
-                from components.release
-                groupId = 'com.jeremy.thunder'
-                artifactId = 'thunder-stomp'
-            }
-
-            debug(MavenPublication) {
-                from components.debug
-                groupId = 'com.jeremy.thunder'
-                artifactId = 'thunder-stomp'
-            }
-        }
-    }
-}
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"
 
 android {
     namespace 'com.jeremy.thunder.stomp'
@@ -54,9 +38,10 @@ dependencies {
 
     implementation 'androidx.core:core-ktx:1.8.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
+
+    implementation 'com.squareup.okio:okio:1.13.0'
+
     implementation 'com.google.code.gson:gson:2.9.0'
+
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2'
 }
-
-group='com.jeremy.thunder'
-version='1.0.0'
