@@ -1,4 +1,5 @@
-# Thunder [![](https://jitpack.io/v/jaeyunn15/Thunder.svg)](https://jitpack.io/#jaeyunn15/Thunder)
+# Thunder
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.jaeyunn15/thunder/badge.svg?style=plastic)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
 
 A WebSocket library that draws heavily from the [Scarlet](https://github.com/Tinder/Scarlet) by Tinder.     
 Currently, support only for Coroutine Flow.     
@@ -25,6 +26,7 @@ Currently, support only for Coroutine Flow.
 
 ---
 ## Download First
+Thunder is available via Maven Central.
 
 First, go to your settings.gradle file and add the code below.
 ~~~ groovy
@@ -34,19 +36,25 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
-        mavenCentral()
-        maven { url 'https://jitpack.io' } // <-- here! you have to copy & paste
+        mavenCentral() <-- here! you have to copy & paste
     }
 }
 ~~~
 
 Use the library by adding a Dependency to the module you want to use.    
-Check Latest Version here : [![](https://jitpack.io/v/jaeyunn15/Thunder.svg)](https://jitpack.io/#jaeyunn15/Thunder)
+Check Latest Version here : [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.jaeyunn15/thunder/badge.svg?style=plastic)](https://central.sonatype.com/artifact/io.github.jaeyunn15/thunder)
 ~~~ groovy
+Gradle
 dependencies {
-    implementation 'com.github.jaeyunn15.Thunder:thunder:{latest_version}'
-    implementation 'com.github.jaeyunn15.Thunder:thunder-okhttp:{latest_version}'
+    implementation 'io.github.jaeyunn15:thunder:1.0.2' // must required
+    implementation 'io.github.jaeyunn15:thunder-okhttp:1.0.2' // must required
 }
+~~~
+
+~~~ toml
+libs.versions
+thunder = { group = "io.github.jaeyunn15", name = "thunder", version = "1.0.2" }
+thunderOkhttp = { group = "io.github.jaeyunn15", name = "thunder-okhttp", version = "1.0.2" }
 ~~~
 
 ---
@@ -165,18 +173,26 @@ class MainViewModel @Inject constructor(
 
 ## Copyright
 ~~~
-Copyright (c) 2023, Jeremy, LLC
-All rights reserved.
+MIT License
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Copyright (c) 2023 jaeyun
 
-   http://www.apache.org/licenses/LICENSE-2.0
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 ~~~
