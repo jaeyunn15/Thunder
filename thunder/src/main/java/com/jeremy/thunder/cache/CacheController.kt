@@ -1,8 +1,8 @@
 package com.jeremy.thunder.cache
 
-import com.jeremy.thunder.thunder_internal.BaseRecovery
-import com.jeremy.thunder.thunder_internal.BaseValve
-import com.jeremy.thunder.thunder_internal.ICacheController
+import com.jeremy.thunder.thunder_internal.cache.BaseRecovery
+import com.jeremy.thunder.thunder_internal.cache.BaseValve
+import com.jeremy.thunder.thunder_internal.cache.ICacheController
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
 
 /**

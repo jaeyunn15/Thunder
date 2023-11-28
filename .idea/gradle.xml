@@ -15,6 +15,7 @@
             <option value="$PROJECT_DIR$/thunder" />
             <option value="$PROJECT_DIR$/thunder-internal" />
             <option value="$PROJECT_DIR$/thunder-okhttp" />
+            <option value="$PROJECT_DIR$/thunder-state" />
             <option value="$PROJECT_DIR$/thunder-stomp" />
           </set>
         </option>

@@ -1,6 +1,6 @@
 package com.jeremy.thunder
 
-import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 

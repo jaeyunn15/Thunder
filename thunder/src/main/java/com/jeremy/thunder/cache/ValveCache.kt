@@ -1,8 +1,7 @@
 package com.jeremy.thunder.cache
 
-import com.jeremy.thunder.thunder_internal.BaseValve
+import com.jeremy.thunder.thunder_internal.cache.BaseValve
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
-import com.jeremy.thunder.thunder_internal.state.ThunderState
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -37,8 +36,8 @@ class ValveCache: BaseValve<ThunderRequest> {
         }
     }
 
-    override fun onUpdateValveState(state: ThunderState) {
-        isEmissiable.update { state == ThunderState.CONNECTED }
+    override fun onUpdateValve(state: com.jeremy.thunder.thunder_state.ConnectState) {
+        isEmissiable.update { state is com.jeremy.thunder.thunder_state.ConnectState.Establish }
     }
 
     override fun requestToValve(request: ThunderRequest) {

@@ -14,7 +14,9 @@ import com.jeremy.thunder.internal.ThunderStateManager
 import com.jeremy.thunder.network.NetworkConnectivityServiceImpl
 import com.jeremy.thunder.thunder_internal.EventProcessor
 import com.jeremy.thunder.thunder_internal.IMapper
-import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_internal.StateManager
+import com.jeremy.thunder.thunder_internal.WebSocket
+import com.jeremy.thunder.thunder_state.WebSocketEvent
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
 import com.jeremy.thunder.ws.Subscribe
@@ -23,7 +25,7 @@ import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
 
 class Thunder private constructor(
-    private val webSocketCore: com.jeremy.thunder.thunder_internal.WebSocket.Factory,
+    private val webSocketCore: WebSocket.Factory,
     serviceExecutor: ServiceExecutor,
     private val scope: CoroutineScope
 ) {
@@ -56,7 +58,7 @@ class Thunder private constructor(
     class Builder {
         private var webSocketCore: com.jeremy.thunder.thunder_internal.WebSocket.Factory? = null
         private val appConnectionProvider by lazy { AppConnectionProvider() }
-        private var stateManager: com.jeremy.thunder.thunder_internal.StateManager? = null
+        private var stateManager: StateManager? = null
         private var iMapperFactory: IMapper.Factory? = null
         private var context: Context? = null
         private var converterType: ConverterType = ConverterType.Serialization
@@ -72,7 +74,7 @@ class Thunder private constructor(
             converterType = type
         }
 
-        fun setStateManager(manager: com.jeremy.thunder.thunder_internal.StateManager.Factory) = apply {
+        fun setStateManager(manager: StateManager.Factory) = apply {
             stateManager = manager.create(
                 connectionListener = appConnectionProvider,
                 networkStatus = createNetworkConnectivity(),

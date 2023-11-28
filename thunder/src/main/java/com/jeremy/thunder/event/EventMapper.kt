@@ -2,7 +2,7 @@ package com.jeremy.thunder.event
 
 import com.jeremy.thunder.thunder_internal.Converter
 import com.jeremy.thunder.thunder_internal.IMapper
-import com.jeremy.thunder.thunder_internal.event.WebSocketEvent
+import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow

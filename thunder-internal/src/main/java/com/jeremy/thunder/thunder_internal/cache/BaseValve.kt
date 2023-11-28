@@ -1,11 +1,11 @@
-package com.jeremy.thunder.thunder_internal
+package com.jeremy.thunder.thunder_internal.cache
 
-import com.jeremy.thunder.thunder_internal.state.ThunderState
+import com.jeremy.thunder.thunder_state.ConnectState
 import kotlinx.coroutines.flow.Flow
 
 interface BaseValve<T> {
 
-    fun onUpdateValveState(state: ThunderState)
+    fun onUpdateValve(state: ConnectState)
     fun requestToValve(request: T)
     fun emissionOfValveFlow(): Flow<List<T>>
 

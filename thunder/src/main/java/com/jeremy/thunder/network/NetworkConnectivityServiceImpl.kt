@@ -5,7 +5,6 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import com.jeremy.thunder.thunder_internal.state.NetworkState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -24,23 +23,23 @@ class NetworkConnectivityServiceImpl constructor (
 
     override fun hasAvailableNetworks(): Boolean = networks.isNotEmpty()
 
-    override val networkStatus: Flow<NetworkState> = callbackFlow {
+    override val networkStatus: Flow<com.jeremy.thunder.thunder_state.NetworkState> = callbackFlow {
         val connectivityCallback = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
                 networks.add(network.networkHandle)
                 if (networks.isNotEmpty()) {
-                    trySend(NetworkState.Available)
+                    trySend(com.jeremy.thunder.thunder_state.NetworkState.Available)
                 }
             }
 
             override fun onUnavailable() {
-                trySend(NetworkState.Unavailable)
+                trySend(com.jeremy.thunder.thunder_state.NetworkState.Unavailable)
             }
 
             override fun onLost(network: Network) {
                 networks.remove(network.networkHandle)
                 if (networks.isEmpty()) {
-                    trySend(NetworkState.Unavailable)
+                    trySend(com.jeremy.thunder.thunder_state.NetworkState.Unavailable)
                 }
             }
 

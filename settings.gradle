@@ -10,7 +10,6 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://jitpack.io' }
     }
 }
 rootProject.name = "Thunder"
@@ -19,3 +18,4 @@ include ':thunder'
 include ':thunder-okhttp'
 include ':thunder-stomp'
 include ':thunder-internal'
+include ':thunder-state'

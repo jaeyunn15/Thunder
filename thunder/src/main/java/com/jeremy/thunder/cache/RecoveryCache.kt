@@ -1,6 +1,6 @@
 package com.jeremy.thunder.cache
 
-import com.jeremy.thunder.thunder_internal.BaseRecovery
+import com.jeremy.thunder.thunder_internal.cache.BaseRecovery
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
 
 

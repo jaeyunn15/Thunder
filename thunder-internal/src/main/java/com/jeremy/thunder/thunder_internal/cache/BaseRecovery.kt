@@ -1,4 +1,4 @@
-package com.jeremy.thunder.thunder_internal
+package com.jeremy.thunder.thunder_internal.cache
 
 interface BaseRecovery<T> {
     fun set(value: T)
