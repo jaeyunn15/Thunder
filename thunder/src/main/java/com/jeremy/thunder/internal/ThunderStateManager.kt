@@ -3,15 +3,22 @@ package com.jeremy.thunder.internal
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.thunderLog
 import com.jeremy.thunder.thunder_internal.AppConnectionListener
+import com.jeremy.thunder.thunder_internal.NetworkConnectivityService
+import com.jeremy.thunder.thunder_internal.StateManager
+import com.jeremy.thunder.thunder_internal.WebSocket
 import com.jeremy.thunder.thunder_internal.cache.BaseRecovery
 import com.jeremy.thunder.thunder_internal.cache.BaseValve
 import com.jeremy.thunder.thunder_internal.cache.ICacheController
-import com.jeremy.thunder.thunder_internal.NetworkConnectivityService
-import com.jeremy.thunder.thunder_internal.WebSocket
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
-import com.jeremy.thunder.thunder_state.WebSocketEvent
 import com.jeremy.thunder.thunder_internal.event.WebSocketRequest
-import com.jeremy.thunder.thunder_internal.StateManager
+import com.jeremy.thunder.thunder_state.Active
+import com.jeremy.thunder.thunder_state.AppState
+import com.jeremy.thunder.thunder_state.ConnectState
+import com.jeremy.thunder.thunder_state.Inactive
+import com.jeremy.thunder.thunder_state.ManagerState
+import com.jeremy.thunder.thunder_state.NetworkState
+import com.jeremy.thunder.thunder_state.ThunderManager
+import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +36,7 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ThunderStateManager private constructor(
     private val connectionListener: AppConnectionListener,
@@ -44,58 +52,39 @@ class ThunderStateManager private constructor(
 
     private var socket: WebSocket? = null
 
-    private val _connectState = MutableStateFlow<com.jeremy.thunder.thunder_state.ConnectState>(com.jeremy.thunder.thunder_state.ConnectState.Initialize)
+    private val _connectState = MutableStateFlow<ConnectState>(ConnectState.Initialize)
 
     private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
 
-    override fun getStateOfType(): com.jeremy.thunder.thunder_state.ManagerState =
-        com.jeremy.thunder.thunder_state.ThunderManager
+    override fun getStateOfType(): ManagerState = ThunderManager
 
     override fun collectWebSocketEvent() = _events.asSharedFlow()
 
     init {
         _connectState.map(valveCache::onUpdateValve).launchIn(innerScope)
 
-        connectionListener.collectAppState()
+        valveCache.emissionOfValveFlow().map { it.map(::requestSendMessage) }.launchIn(innerScope)
+
+        connectionListener.collectAppState() // Application State (Active is Foreground & Background, Inactive is Destroy)
             .mapLatest { appState ->
-                when (appState) {
-                    com.jeremy.thunder.thunder_state.Inactive -> {
-                        recoveryProcess()
-                        false
-                    }
-
-                    com.jeremy.thunder.thunder_state.Active -> {
-                        true
-                    }
-                }
-            }.combine(networkState.networkStatus) { upStreamState, networkState ->
-                if (upStreamState) {
-                    when (networkState) {
-                        com.jeremy.thunder.thunder_state.NetworkState.Unavailable -> {
-                            recoveryProcess()
-                            false
-                        }
-
-                        com.jeremy.thunder.thunder_state.NetworkState.Available -> {
-                            true
-                        }
-                    }
-                } else false
-            }.combine(_events) { upStreamState, webSocketEvent ->
+                appState.checkAndRecovery()
+            }.combine(networkState.networkStatus) { upStreamState, networkState -> // Network State (either wifi, mobile)
+                if (upStreamState) networkState.checkAndRecovery() else false
+            }.combine(_events) { upStreamState, webSocketEvent -> // WebSocket Event flow
                 if (upStreamState) {
                     when (webSocketEvent) {
-                        is WebSocketEvent.OnMessageReceived -> Unit
+                        is WebSocketEvent.OnMessageReceived,
                         is WebSocketEvent.OnConnectionOpen -> {
-                            _connectState.update { com.jeremy.thunder.thunder_state.ConnectState.Establish }
+                            _connectState.update { ConnectState.Establish }
                         }
 
                         WebSocketEvent.OnConnectionClosed -> {
-                            _connectState.update { com.jeremy.thunder.thunder_state.ConnectState.ConnectClose() }
+                            _connectState.update { ConnectState.ConnectClose() }
                         }
 
                         is WebSocketEvent.OnConnectionError -> {
                             _connectState.update {
-                                com.jeremy.thunder.thunder_state.ConnectState.ConnectError(
+                                ConnectState.ConnectError(
                                     com.jeremy.thunder.thunder_state.ThunderError.SocketLoss(webSocketEvent.error)
                                 )
                             }
@@ -108,29 +97,39 @@ class ThunderStateManager private constructor(
                     thunderLog("Open First Connection.")
                 }
             }.launchIn(innerScope)
+    }
 
-        combine(
-            _connectState,
-            valveCache.emissionOfValveFlow(),
-        ) { connectState, valve ->
-            if (connectState is com.jeremy.thunder.thunder_state.ConnectState.Establish) {
-                valve.forEach(::requestSendMessage)
+    private suspend fun AppState.checkAndRecovery(): Boolean {
+        return when (this) {
+            Active -> true
+            Inactive -> {
+                recoveryProcess()
+                false
             }
-        }.launchIn(innerScope)
+        }
+    }
+    private suspend fun NetworkState.checkAndRecovery(): Boolean {
+        return when (this) {
+            NetworkState.Available -> true
+            NetworkState.Unavailable -> {
+                recoveryProcess()
+                false
+            }
+        }
     }
 
     private suspend fun recoveryProcess() {
         connectionRecoveryProcess(
             onConnect = {
                 requestRecoveryProcess()
-            },
+            }
         )
     }
 
     private suspend fun checkOnValidState(): Boolean = withContext(Dispatchers.Default) {
         val appState = connectionListener.collectAppState().firstOrNull()
         val networkState = networkState.networkStatus.firstOrNull()
-        appState == com.jeremy.thunder.thunder_state.Active && networkState == com.jeremy.thunder.thunder_state.NetworkState.Available
+        appState == Active && networkState == NetworkState.Available
     }
 
     private suspend fun connectionRecoveryProcess(onConnect: () -> Unit) {

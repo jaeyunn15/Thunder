@@ -23,7 +23,7 @@ class CacheController (
     }
 
 
-    class Factory() {
+    class Factory {
         private fun createRecoveryCache(): RecoveryCache {
             return RecoveryCache.Factory().create()
         }

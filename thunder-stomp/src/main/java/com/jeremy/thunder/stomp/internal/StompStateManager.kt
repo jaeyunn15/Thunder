@@ -18,7 +18,6 @@ import com.jeremy.thunder.thunder_internal.cache.BaseValve
 import com.jeremy.thunder.thunder_internal.cache.ICacheController
 import com.jeremy.thunder.thunder_internal.event.StompRequest
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
-import com.jeremy.thunder.thunder_internal.event.WebSocketRequest
 import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -132,11 +131,7 @@ class StompStateManager private constructor(
     }
 
     private suspend fun recoveryProcess() {
-        connectionRecoveryProcess(
-            onConnect = {
-                requestRecoveryProcess()
-            },
-        )
+        connectionRecoveryProcess { requestRecoveryProcess() }
     }
 
     private suspend fun checkOnValidState(): Boolean = withContext(Dispatchers.Default) {
@@ -156,7 +151,7 @@ class StompStateManager private constructor(
     private fun requestRecoveryProcess() {
         if (recoveryCache.hasCache()) {
             val request = recoveryCache.get()
-            val webSocketRequest = (request as WebSocketRequest)
+            val webSocketRequest = (request as StompRequest)
             valveCache.requestToValve(webSocketRequest)
             recoveryCache.clear()
         }
@@ -263,17 +258,18 @@ class StompStateManager private constructor(
             runCatching {
                 val uuid = UUID.randomUUID().toString()
                 headerIdStore.put(topic, uuid)
-                val request = compileMessage(thunderStompRequest {
-                    this.command = Command.SUBSCRIBE
-                    header {
-                        ID to uuid
-                        DESTINATION to topic
-                        ACK to DEFAULT_ACK
-                    }
-                    this.payload = payload
-                })
                 websocket.send(
-                    request
+                    compileMessage(
+                        thunderStompRequest {
+                            command = Command.SUBSCRIBE
+                            header {
+                                ID to uuid
+                                DESTINATION to topic
+                                ACK to DEFAULT_ACK
+                            }
+                            this.payload = payload
+                        }
+                    )
                 )
             }
         }
