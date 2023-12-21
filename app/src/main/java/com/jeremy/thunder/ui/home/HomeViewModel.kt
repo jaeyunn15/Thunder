@@ -62,7 +62,7 @@ class HomeViewModel @Inject constructor(
 
     fun observeAllMarket() {
         service.collectUpbitTicker().onEach {
-            Log.d("Thunder","$it")
+            Log.d("Thunder","${it.code} || ${it.trade_price}")
         }.launchIn(viewModelScope)
     }
 }

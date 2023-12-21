@@ -16,21 +16,24 @@ import com.jeremy.thunder.thunder_internal.WebSocket
 import com.jeremy.thunder.thunder_internal.cache.BaseRecovery
 import com.jeremy.thunder.thunder_internal.cache.BaseValve
 import com.jeremy.thunder.thunder_internal.cache.ICacheController
-import com.jeremy.thunder.thunder_internal.event.StompRequest
+import com.jeremy.thunder.thunder_internal.event.RequestType
+import com.jeremy.thunder.thunder_internal.event.StompSendRequest
+import com.jeremy.thunder.thunder_internal.event.StompSubscribeRequest
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_internal.stateDelegate
+import com.jeremy.thunder.thunder_state.ConnectState
 import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
@@ -53,11 +56,19 @@ class StompStateManager private constructor(
 
     private var socket: WebSocket? = null
 
-    private val _connectState = MutableStateFlow<com.jeremy.thunder.thunder_state.ConnectState>(com.jeremy.thunder.thunder_state.ConnectState.Initialize)
+    private val _connectState = MutableStateFlow<ConnectState>(ConnectState.Initialize)
 
     private val _events = MutableSharedFlow<WebSocketEvent>(replay = 1)
 
     private val headerIdStore by lazy { HeaderIdStore() }
+
+    private val stateCollector: Flow<ConnectState> by stateDelegate(
+        connectionListener.collectAppState(),
+        networkState.networkStatus,
+        _events,
+        scope,
+        ::recoveryProcess
+    )
 
     override fun getStateOfType(): com.jeremy.thunder.thunder_state.ManagerState {
         return com.jeremy.thunder.thunder_state.StompManager
@@ -67,70 +78,20 @@ class StompStateManager private constructor(
 
 
     init {
-        _connectState.map(valveCache::onUpdateValve).launchIn(innerScope)
-
-        connectionListener.collectAppState()
-            .mapLatest { appState ->
-                when (appState) {
-                    com.jeremy.thunder.thunder_state.Inactive -> {
-                        recoveryProcess()
-                        false
-                    }
-
-                    com.jeremy.thunder.thunder_state.Active -> {
-                        true
-                    }
-                }
-            }.combine(networkState.networkStatus) { upStreamState, networkState ->
-                if (upStreamState) {
-                    when (networkState) {
-                        com.jeremy.thunder.thunder_state.NetworkState.Unavailable -> {
-                            recoveryProcess()
-                            false
-                        }
-
-                        com.jeremy.thunder.thunder_state.NetworkState.Available -> {
-                            true
-                        }
-                    }
-                } else false
-            }.combine(_events) { upStreamState, webSocketEvent ->
-                if (upStreamState) {
-                    when (webSocketEvent) {
-                        is WebSocketEvent.OnMessageReceived -> Unit
-                        is WebSocketEvent.OnConnectionOpen -> {
-                            _connectState.update { com.jeremy.thunder.thunder_state.ConnectState.Establish }
-                        }
-
-                        WebSocketEvent.OnConnectionClosed -> {
-                            _connectState.update { com.jeremy.thunder.thunder_state.ConnectState.ConnectClose() }
-                        }
-
-                        is WebSocketEvent.OnConnectionError -> {
-                            _connectState.update {
-                                com.jeremy.thunder.thunder_state.ConnectState.ConnectError(
-                                    com.jeremy.thunder.thunder_state.ThunderError.SocketLoss(webSocketEvent.error)
-                                )
-                            }
-                            recoveryProcess()
-                        }
-                    }
-                }
-            }.onStart {
-                openConnection {}
-            }.launchIn(innerScope)
-
-        combine(
-            _connectState,
-            valveCache.emissionOfValveFlow(),
-        ) { connectState, valve ->
-            if (connectState is com.jeremy.thunder.thunder_state.ConnectState.Establish) {
-                valve.forEach(::requestExecute)
-            }
+        valveCache.emissionOfValveFlow().map {
+            it.map(::requestExecute)
         }.launchIn(innerScope)
+
+        stateCollector.onEach { state ->
+            _connectState.update { state }
+        }.onStart {
+            openConnection {}
+        }.launchIn(innerScope)
+
+        _connectState.map(valveCache::onUpdateValve).launchIn(innerScope)
     }
 
-    private suspend fun recoveryProcess() {
+    private fun recoveryProcess() = innerScope.launch {
         connectionRecoveryProcess { requestRecoveryProcess() }
     }
 
@@ -151,7 +112,7 @@ class StompStateManager private constructor(
     private fun requestRecoveryProcess() {
         if (recoveryCache.hasCache()) {
             val request = recoveryCache.get()
-            val webSocketRequest = (request as StompRequest)
+            val webSocketRequest = (request as ThunderRequest)
             valveCache.requestToValve(webSocketRequest)
             recoveryCache.clear()
         }
@@ -164,20 +125,23 @@ class StompStateManager private constructor(
     }
 
     private fun requestExecute(message: ThunderRequest) = innerScope.launch(Dispatchers.IO) {
-        val request = message as StompRequest
-        when (request.command) {
-            Command.SUBSCRIBE.name.lowercase() -> {
-                subscribe(
-                    topic = request.destination,
-                    payload = request.payload.orEmpty()
-                )
+        println("execute = $message")
+        when (message.typeOfRequest) {
+            RequestType.STOMP_SUBSCRIBE -> {
+                val request = message as StompSubscribeRequest
+                if (request.subscribe) {
+                    subscribe(
+                        topic = request.destination,
+                        payload = request.payload.orEmpty()
+                    )
+                } else {
+                    unsubscribe(
+                        topic = request.destination
+                    )
+                }
             }
-            Command.UNSUBSCRIBE.name.lowercase() -> {
-                unsubscribe(
-                    topic = request.destination
-                )
-            }
-            Command.SEND.name.lowercase() -> {
+            RequestType.STOMP_SEND -> {
+                val request = message as StompSendRequest
                 sendMessage(
                     topic = request.destination,
                     payload = request.payload.orEmpty()
@@ -248,16 +212,22 @@ class StompStateManager private constructor(
     }
 
     override fun send(message: ThunderRequest) {
-        val request = message as StompRequest
-        valveCache.requestToValve(request)
-        recoveryCache.set(request)
+        println("send = $message")
+        val result = when (message.typeOfRequest) {
+            RequestType.STOMP_SEND -> message as StompSendRequest
+            RequestType.STOMP_SUBSCRIBE -> message as StompSubscribeRequest
+            else -> null
+        }
+        result?.let {
+            valveCache.requestToValve(it)
+            recoveryCache.set(it)
+        }
     }
 
     private fun subscribe(topic: String, payload: String) {
         socket?.let { websocket ->
             runCatching {
                 val uuid = UUID.randomUUID().toString()
-                headerIdStore.put(topic, uuid)
                 websocket.send(
                     compileMessage(
                         thunderStompRequest {
@@ -270,7 +240,11 @@ class StompStateManager private constructor(
                             this.payload = payload
                         }
                     )
-                )
+                ).apply {
+                    if (this) {
+                        headerIdStore.put(topic, uuid)
+                    }
+                }
             }
         }
     }

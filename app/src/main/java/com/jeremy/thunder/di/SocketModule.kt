@@ -40,8 +40,8 @@ internal object SocketModule {
         @ApplicationContext context: Context
     ): SocketService {
         return thunder {
-//            webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream")) // binance socket server
-            webSocketCore(okHttpClient.makeWebSocketCore("wss://api.upbit.com/websocket/v1")) // upbit socket server
+//            setWebSocketFactory(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream")) // binance socket server
+            setWebSocketFactory(okHttpClient.makeWebSocketCore("wss://api.upbit.com/websocket/v1")) // upbit socket server
             setApplicationContext(context)
             setConverterType(ConverterType.Serialization)
         }.create()
@@ -54,7 +54,7 @@ internal object SocketModule {
 //        @ApplicationContext context: Context
 //    ): StompService {
 //        return thunder {
-//            webSocketCore(okHttpClient.makeWebSocketCore("")) //required
+//            setWebSocketFactory(okHttpClient.makeWebSocketCore("")) //required
 //            setApplicationContext(context) //required
 //            setConverterType(ConverterType.Serialization)
 //            setStateManager(StompStateManager.Factory()) // optional but if you need stomp this is required
