@@ -10,7 +10,7 @@ interface StateManager {
 
     fun collectWebSocketEvent(): Flow<WebSocketEvent>
 
-    fun openConnection(onConnect: ()-> Unit)
+    fun openConnection(onConnect: () -> Unit)
 
     fun closeConnection(onDisconnect: () -> Unit)
 

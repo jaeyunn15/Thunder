@@ -2,10 +2,9 @@ package com.jeremy.thunder.internal
 
 import com.jeremy.thunder.coroutine.CoroutineScope.scope
 import com.jeremy.thunder.thunder_internal.EventProcessor
-import com.jeremy.thunder.thunder_internal.event.StompRequest
+import com.jeremy.thunder.thunder_internal.StateManager
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
 import com.jeremy.thunder.thunder_state.WebSocketEvent
-import com.jeremy.thunder.thunder_internal.StateManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.launchIn
@@ -28,18 +27,11 @@ class ThunderProvider internal constructor(
     }
 
     fun send(request: ThunderRequest) {
-        when(stateManager.getStateOfType()) {
-            com.jeremy.thunder.thunder_state.ThunderManager -> {
-                stateManager.send(request)
-            }
-            com.jeremy.thunder.thunder_state.StompManager -> {
-                stateManager.send(request)
-            }
-        }
+        stateManager.send(request)
     }
 
-    fun subscribe(request: StompRequest) {
-        stateManager.send(request)
+    fun subscribe(request: ThunderRequest) {
+        stateManager.send(request) // Parts that need to be modified to use other dedicated methods
     }
 
     class Factory(

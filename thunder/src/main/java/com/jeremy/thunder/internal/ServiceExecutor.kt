@@ -9,9 +9,9 @@ import com.jeremy.thunder.getAboutRawType
 import com.jeremy.thunder.getParameterUpperBound
 import com.jeremy.thunder.thunder_internal.Converter
 import com.jeremy.thunder.thunder_internal.IMapper
-import com.jeremy.thunder.thunder_internal.event.StompRequest
+import com.jeremy.thunder.thunder_internal.event.StompSendRequest
+import com.jeremy.thunder.thunder_internal.event.StompSubscribeRequest
 import com.jeremy.thunder.thunder_internal.event.WebSocketRequest
-import com.jeremy.thunder.ws.Stomp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -64,47 +64,27 @@ class ServiceExecutor internal constructor(
     private fun Flow<Any>.createPipeline(): ReceivePipeline<*> = ReceivePipeline(this, scope)
 
     fun executeSend(method: Method, args: Array<out Any>) {
-        require(args.isNotEmpty()) { "@Send method require at least 1 arguments for execute service" }
-
-        val secondAnnotation = method.annotations.getOrNull(1)
-
-        /**
-         * Execute for stomp send frame.
-         * A minimum of 2 arguments is required. (Destination, Payload)
-         * */
-        if (secondAnnotation != null && secondAnnotation is Stomp) {
-            scope.launch(Dispatchers.Default) {
-                require(args[0] is String) { "@Send with @Stomp annotation method require String type of first field. (destination) " }
-                require(args[1] is String) { "@Send with @Stomp annotation method require String type of second field. (payload) " }
-                val destination = args[0] as String //destination
-                val payload = args[1] as String //payload
-                thunderProvider.send(
-                    StompRequest(
-                        command = "send",
-                        destination = destination,
-                        payload = payload
-                    )
-                )
-            }
-        } else {
-            scope.launch(Dispatchers.Default) {
-                val request = Gson().toJson(args[0])
-                thunderProvider.send(WebSocketRequest(request))
-            }
+        scope.launch(Dispatchers.Default) {
+            val request = Gson().toJson(args[0])
+            thunderProvider.send(WebSocketRequest(request))
         }
     }
 
-    fun executeSubscribe(method: Method, args: Array<out Any>) {
-        require(args.isNotEmpty()) { "@Subscribe method require at least 2 arguments for execute service" }
+    fun executeStompSend(method: Method, args: Array<out Any>) {
         scope.launch(Dispatchers.Default) {
-            val subscribeFlag = args[0] as Boolean
-            val subscribeDestination = args[1] as String
-            thunderProvider.subscribe(
-                StompRequest(
-                    command = if (subscribeFlag) "subscribe" else "unsubscribe",
-                    destination = subscribeDestination
-                )
-            )
+            require(args[0] is StompSendRequest) { "@Send with @Stomp annotation method require StompSendRequest type of first field. " }
+            val request = args[0] as StompSendRequest
+            thunderProvider.send(request)
+        }
+    }
+
+    /**
+     * This method exists for STOMP support.
+     * */
+    fun executeStompSubscribe(method: Method, args: Array<out Any>) {
+        scope.launch(Dispatchers.Default) {
+            val subscribeRequest = args[0] as StompSubscribeRequest
+            thunderProvider.subscribe(subscribeRequest)
         }
     }
 

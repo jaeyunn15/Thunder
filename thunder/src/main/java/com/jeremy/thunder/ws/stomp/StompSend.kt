@@ -1,6 +1,6 @@
-package com.jeremy.thunder.ws
+package com.jeremy.thunder.ws.stomp
 
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class Send
+annotation class StompSend

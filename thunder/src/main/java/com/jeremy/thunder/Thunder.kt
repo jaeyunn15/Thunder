@@ -19,7 +19,8 @@ import com.jeremy.thunder.thunder_internal.WebSocket
 import com.jeremy.thunder.thunder_state.WebSocketEvent
 import com.jeremy.thunder.ws.Receive
 import com.jeremy.thunder.ws.Send
-import com.jeremy.thunder.ws.Subscribe
+import com.jeremy.thunder.ws.stomp.StompSend
+import com.jeremy.thunder.ws.stomp.StompSubscribe
 import kotlinx.coroutines.CoroutineScope
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Proxy
@@ -43,27 +44,28 @@ class Thunder private constructor(
         return serviceInterface.cast(proxy)
     }
 
-    private val invocationHandler = InvocationHandler { proxy, method, nullableArgs ->
+    private val invocationHandler = InvocationHandler { _, method, nullableArgs ->
         method.annotations.getOrNull(0)?.let { annotation ->
             val args = nullableArgs ?: arrayOf()
             return@InvocationHandler when (annotation) {
                 is Send -> serviceExecutor.executeSend(method, args)
                 is Receive -> serviceExecutor.executeReceive(method, args)
-                is Subscribe -> serviceExecutor.executeSubscribe(method, args)
+                is StompSend -> serviceExecutor.executeStompSend(method, args)
+                is StompSubscribe -> serviceExecutor.executeStompSubscribe(method, args)
                 else -> require(false) { "there is no matching annotation" }
             }
         }
     }
 
     class Builder {
-        private var webSocketCore: com.jeremy.thunder.thunder_internal.WebSocket.Factory? = null
+        private var webSocketCore: WebSocket.Factory? = null
         private val appConnectionProvider by lazy { AppConnectionProvider() }
         private var stateManager: StateManager? = null
         private var iMapperFactory: IMapper.Factory? = null
         private var context: Context? = null
         private var converterType: ConverterType = ConverterType.Serialization
 
-        fun webSocketCore(core: com.jeremy.thunder.thunder_internal.WebSocket.Factory): Builder = apply { this.webSocketCore = core }
+        fun setWebSocketFactory(core: WebSocket.Factory): Builder = apply { this.webSocketCore = core }
 
         fun setApplicationContext(context: Context): Builder = apply {
             this.context = context
