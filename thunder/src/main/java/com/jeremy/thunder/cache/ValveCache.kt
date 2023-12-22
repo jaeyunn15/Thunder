@@ -2,6 +2,7 @@ package com.jeremy.thunder.cache
 
 import com.jeremy.thunder.thunder_internal.cache.BaseValve
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
+import com.jeremy.thunder.thunder_state.ConnectState
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -32,19 +33,26 @@ class ValveCache: BaseValve<ThunderRequest> {
                 }
                 emit(emitCacheList)
             }
-            delay(500)
+            delay(CACHE_EMIT_GAP)
         }
     }
 
-    override fun onUpdateValve(state: com.jeremy.thunder.thunder_state.ConnectState) {
-        isEmissiable.update { state is com.jeremy.thunder.thunder_state.ConnectState.Establish }
+    override fun onUpdateValve(state: ConnectState) {
+        isEmissiable.update { state is ConnectState.Establish }
     }
 
     override fun requestToValve(request: ThunderRequest) {
-        innerQueue.add(request)
+        val lastRequest = innerQueue.poll()
+        if (lastRequest != request) {
+            innerQueue.add(request)
+        }
     }
 
     override fun emissionOfValveFlow(): Flow<List<ThunderRequest>> = cacheFlow()
+
+    companion object {
+        private const val CACHE_EMIT_GAP = 500L
+    }
 
     class Factory: BaseValve.BaseValveFactory<ThunderRequest> {
         override fun create(): ValveCache {

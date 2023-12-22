@@ -21,7 +21,9 @@ import com.jeremy.thunder.thunder_internal.event.StompSendRequest
 import com.jeremy.thunder.thunder_internal.event.StompSubscribeRequest
 import com.jeremy.thunder.thunder_internal.event.ThunderRequest
 import com.jeremy.thunder.thunder_internal.stateDelegate
+import com.jeremy.thunder.thunder_state.Active
 import com.jeremy.thunder.thunder_state.ConnectState
+import com.jeremy.thunder.thunder_state.NetworkState
 import com.jeremy.thunder.thunder_state.WebSocketEvent
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -98,7 +100,7 @@ class StompStateManager private constructor(
     private suspend fun checkOnValidState(): Boolean = withContext(Dispatchers.Default) {
         val appState = connectionListener.collectAppState().firstOrNull()
         val networkState = networkState.networkStatus.firstOrNull()
-        appState == com.jeremy.thunder.thunder_state.Active && networkState == com.jeremy.thunder.thunder_state.NetworkState.Available
+        appState == Active && networkState == NetworkState.Available
     }
 
     private suspend fun connectionRecoveryProcess(onConnect: () -> Unit) {
@@ -125,7 +127,6 @@ class StompStateManager private constructor(
     }
 
     private fun requestExecute(message: ThunderRequest) = innerScope.launch(Dispatchers.IO) {
-        println("execute = $message")
         when (message.typeOfRequest) {
             RequestType.STOMP_SUBSCRIBE -> {
                 val request = message as StompSubscribeRequest
@@ -212,7 +213,6 @@ class StompStateManager private constructor(
     }
 
     override fun send(message: ThunderRequest) {
-        println("send = $message")
         val result = when (message.typeOfRequest) {
             RequestType.STOMP_SEND -> message as StompSendRequest
             RequestType.STOMP_SUBSCRIBE -> message as StompSubscribeRequest
@@ -228,6 +228,7 @@ class StompStateManager private constructor(
         socket?.let { websocket ->
             runCatching {
                 val uuid = UUID.randomUUID().toString()
+                headerIdStore.put(topic, uuid)
                 websocket.send(
                     compileMessage(
                         thunderStompRequest {
@@ -240,11 +241,7 @@ class StompStateManager private constructor(
                             this.payload = payload
                         }
                     )
-                ).apply {
-                    if (this) {
-                        headerIdStore.put(topic, uuid)
-                    }
-                }
+                )
             }
         }
     }

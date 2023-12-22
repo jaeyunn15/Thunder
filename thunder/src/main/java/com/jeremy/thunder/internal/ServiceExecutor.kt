@@ -27,7 +27,8 @@ import java.lang.reflect.Type
  * create logic by annotation
  * @Receive - create pipeline flow for observer
  * @Send - create send data
- * @Subscribe - create subscribe for stomp
+ * @StompSubscribe - create subscribe for stomp
+ * @StompSend - create send data for stomp
  * */
 
 class ServiceExecutor internal constructor(

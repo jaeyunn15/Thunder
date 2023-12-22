@@ -16,9 +16,7 @@ class ReceivePipeline<T>(
     scope: CoroutineScope
 ) {
     init {
-        socketEventFlow.onEach {
-            store(it)
-        }.launchIn(scope)
+        socketEventFlow.onEach(::store).launchIn(scope)
     }
 
     private val _cache = Channel<T>(capacity = 100, onBufferOverflow = BufferOverflow.DROP_OLDEST)

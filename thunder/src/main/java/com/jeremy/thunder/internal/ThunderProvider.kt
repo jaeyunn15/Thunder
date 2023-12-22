@@ -17,14 +17,10 @@ class ThunderProvider internal constructor(
 ) {
 
     init {
-        stateManager.collectWebSocketEvent().onEach {
-            eventProcessor.onEventDelivery(it)
-        }.launchIn(scope)
+        stateManager.collectWebSocketEvent().onEach(eventProcessor::onEventDelivery).launchIn(scope)
     }
 
-    fun observeEvent(): Flow<WebSocketEvent> {
-        return eventProcessor.collectEvent()
-    }
+    fun observeEvent(): Flow<WebSocketEvent> = eventProcessor.collectEvent()
 
     fun send(request: ThunderRequest) {
         stateManager.send(request)
