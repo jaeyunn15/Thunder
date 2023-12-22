@@ -18,7 +18,7 @@ Currently, support only for Coroutine Flow.
 - Regardless of the state of your app, if it's alive, it will automatically manage to stay connected. 
 - Provide **retry and reconnect** handling based on the application's network and socket state.
 - Provide the ability to **automatically recover requests** via the last request cache.
-- Provides a websocket connection based on the STOMP. (December, 2023)
+- Provides a websocket connection based on the STOMP. [If you use STOMP, you must read this.](#stomp-usage)
 
 ### Converter 
 - Gson
@@ -46,15 +46,15 @@ Check Latest Version here : [![Maven Central](https://img.shields.io/maven-centr
 ~~~ groovy
 Gradle
 dependencies {
-    implementation 'io.github.jaeyunn15:thunder:1.0.2' // must required
-    implementation 'io.github.jaeyunn15:thunder-okhttp:1.0.2' // must required
+    implementation 'io.github.jaeyunn15:thunder:1.1.0' // must required
+    implementation 'io.github.jaeyunn15:thunder-okhttp:1.1.0' // must required
 }
 ~~~
 
 ~~~ toml
 libs.versions
-thunder = { group = "io.github.jaeyunn15", name = "thunder", version = "1.0.2" }
-thunderOkhttp = { group = "io.github.jaeyunn15", name = "thunder-okhttp", version = "1.0.2" }
+thunder = { group = "io.github.jaeyunn15", name = "thunder", version = "1.1.0" }
+thunderOkhttp = { group = "io.github.jaeyunn15", name = "thunder-okhttp", version = "1.1.0" }
 ~~~
 
 ---
@@ -83,7 +83,7 @@ Second, we need to create a Thunder instance, which requires an ApplicationConte
 ~~~ kotlin
 
 val thunderInstance = Thunder.Builder()
-    .webSocketCore(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+    .setWebSocketFactory(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
     .setApplicationContext(context)
     .setConverterType(ConverterType.Gson)
     .build()
@@ -167,8 +167,115 @@ class MainViewModel @Inject constructor(
     }
 }
 ~~~
-
 ---
+### STOMP usage
+Use the library by adding a Dependency to the module you want to use.    
+**To use the STOMP method, you must add the thunder-stomp module.**
+~~~ groovy
+Gradle
+dependencies {
+    implementation 'io.github.jaeyunn15:thunder:1.1.0' // must required
+    implementation 'io.github.jaeyunn15:thunder-okhttp:1.1.0' // must required
+    implementation 'io.github.jaeyunn15:thunder-stomp:1.1.0' // must required    
+}
+~~~
+
+~~~ toml
+libs.versions
+thunder = { group = "io.github.jaeyunn15", name = "thunder", version = "1.1.0" }
+thunderOkhttp = { group = "io.github.jaeyunn15", name = "thunder-okhttp", version = "1.1.0" }
+thunderStomp = { group = "io.github.jaeyunn15", name = "thunder-stomp", version = "1.1.0" }
+~~~
+First, we need to define an interface to request data and receive responses.    
+> The STOMP method requires you to use the annotation with stomp as a prefix when requesting a response.    
+However, when receiving a response, you can use the normal @Receive annotation.
+
+
+> When using STOMP, you should only use certain parameters based on the annotation.     
+>> @StompSubcribe - StompSubscribeRequest.   
+>> @StompSend - StompSendRequest
+~~~ kotlin
+interface SocketService {
+
+    @StompSubscribe
+    fun subscribe(request: StompSubscribeRequest)
+
+    @StompSend
+    fun send(request: StompSendRequest)
+
+    @Receive
+    fun response(): Flow<TickerResponse>
+}
+~~~
+
+
+Second, we need to create a Thunder instance, which requires an ApplicationContext and an OkHttpClient.     
+> **If you use the STOMP method, you will need to explicitly write the StateManager and EventMapper.**
+~~~ kotlin
+
+val thunderInstance = Thunder.Builder()
+    .setWebSocketFactory(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+    .setApplicationContext(context) // must required
+    .setConverterType(ConverterType.Serialization)
+    .setStateManager(StompStateManager.Factory()) // must required
+    .setEventMapper(StompEventMapper.Factory()) // must required
+    .build()
+
+thunderInstance.create<SocketService>()
+~~~
+
+
+
+Alternatively, you can use a dependency injection library like Hilt to create them for you.
+
+~~~ kotlin
+
+    @Singleton
+    @Provides
+    fun provideOkHttpClient(): OkHttpClient {
+        val httpLoggingInterceptor = HttpLoggingInterceptor()
+            .setLevel(HttpLoggingInterceptor.Level.BODY)
+        return OkHttpClient.Builder()
+            .addInterceptor(httpLoggingInterceptor)
+            .pingInterval(
+                10,
+                TimeUnit.SECONDS
+            ) // If there are no events for a minute, we need to put in some code for ping pong to output a socket connection error from okhttp.
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSocketService(
+        okHttpClient: OkHttpClient,
+        @ApplicationContext context: Context
+    ): SocketService {
+        return Thunder.Builder()
+            .setWebSocketFactory(okHttpClient.makeWebSocketCore("wss://fstream.binance.com/stream"))
+            .setApplicationContext(context) // must required
+            .setConverterType(ConverterType.Serialization)
+            .setStateManager(StompStateManager.Factory()) // must required
+            .setEventMapper(StompEventMapper.Factory()) // must required
+            .build()
+            .create()
+    }
+
+    // or you can like this. (Kotlin Type-Safe Builder)
+    @Provides
+    @Singleton
+    fun provideSocketService(
+        okHttpClient: OkHttpClient,
+        @ApplicationContext context: Context
+    ): SocketService {
+        return thunder {
+            setWebSocketFactory(okHttpClient.makeWebSocketCore("ws://tradingforce-ws.zum.com/realtime-stock")) //required
+            setApplicationContext(context) //required
+            setConverterType(ConverterType.Serialization)
+            setStateManager(StompStateManager.Factory()) // optional but if you need stomp this is required
+            setEventMapper(StompEventMapper.Factory()) // optional but if you need stomp this is required
+        }.create()
+    }
+~~~
 
 
 ## Copyright
