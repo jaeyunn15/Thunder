@@ -268,7 +268,7 @@ Alternatively, you can use a dependency injection library like Hilt to create th
         @ApplicationContext context: Context
     ): SocketService {
         return thunder {
-            setWebSocketFactory(okHttpClient.makeWebSocketCore("ws://tradingforce-ws.zum.com/realtime-stock")) //required
+            setWebSocketFactory(okHttpClient.makeWebSocketCore("")) //required
             setApplicationContext(context) //required
             setConverterType(ConverterType.Serialization)
             setStateManager(StompStateManager.Factory()) // optional but if you need stomp this is required
