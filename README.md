@@ -20,6 +20,8 @@ Currently, support only for Coroutine Flow.
 - Provide the ability to **automatically recover requests** via the last request cache.
 - Provides a websocket connection based on the STOMP. [If you use STOMP, you must read this.](#stomp-usage)
 
+- New development with KSP to increase runtime stability. (coming in 2.0.X)
+
 ### Converter 
 - Gson
 - KotlinX-Serialization **(Default)**       
